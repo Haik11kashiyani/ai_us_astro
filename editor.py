@@ -358,7 +358,7 @@ class EditorEngine:
                     music = music.subclip(0, final_video.duration)
                 
                 # Lower content volume significantly (background)
-                music = music.volumex(0.05)  # Reduced to 5% based on feedback
+                music = music.volumex(0.02)  # Reduced to near-silent (2%) based on feedback
                 
                 # Mix audio
                 original_audio = final_video.audio
