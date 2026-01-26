@@ -269,7 +269,11 @@
         #zodiac-image {
             width: 580px;
             height: 580px;
-            object-fit: contain;
+            object-fit: cover;
+            /* Ensures it fills the circle */
+            border-radius: 50%;
+            /* CIRCULAR MASK */
+            border: 4px solid rgba(255, 255, 255, 0.2);
             filter: drop-shadow(0 0 60px var(--glow, #9c27b0));
             z-index: 11;
             animation: zodiacFloat 6s ease-in-out infinite;
@@ -282,8 +286,8 @@
                 transform: translateY(0) scale(1);
             }
 
-            50% {
-                transform: translateY(-20px) scale(1.05);
+            55% {
+                transform: translateY(-20px) scale(1.02);
             }
         }
 
@@ -292,8 +296,8 @@
            ===================== */
         #text-container {
             position: absolute;
-            top: 980px;
-            /* Moved down for better spacing */
+            top: 880px;
+            /* Moved UP to fix cutoff */
             left: 50%;
             transform: translateX(-50%);
             width: 950px;
