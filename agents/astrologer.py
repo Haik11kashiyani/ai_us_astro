@@ -346,8 +346,10 @@ Discover what the stars have in store for you today!
         5. Keep the tone warm, hopeful, but honest - acknowledge challenges when present
         6. Make predictions feel PERSONAL and RELEVANT to the specific sign
         7. Include timing guidance (morning vs evening energy, etc.)
+7. Include timing guidance (morning vs evening energy, etc.)
         8. DO NOT use Hindu/Vedic terms - use Western astrology terminology only
-        """
+        9. Add EMOTION TAGS at the start of sentences where appropriate: (Happy), (Excited), (Serious), (Caution), (Warm).
+        """,
         
         user_prompt = f"""
         Generate a **Daily Horoscope** for **{sign}** for {date}.
@@ -406,6 +408,7 @@ Discover what the stars have in store for you today!
         4. Give specific dates for important events
         5. Be detailed but accessible - explain astrological terms simply
         6. Use WESTERN astrology terminology only (no Vedic terms)
+        7. Use (Happy), (Excited), (Serious), (Caution), (Warm) tags to indicate tone.
         """
         
         user_prompt = f"""
