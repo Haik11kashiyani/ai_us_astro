@@ -17,10 +17,10 @@ class NarratorAgent:
         # en-US-JennyNeural (Female, warm, professional)
         # en-US-AriaNeural (Female, engaging)
         # en-US-GuyNeural (Male, authoritative)
-        # en-US-ChristopherNeural (Male, smooth)
-        self.voice = "en-US-JennyNeural"  # Most popular for content
-        self.rate = "+5%"  # Slightly faster for engaging delivery
-        self.pitch = "+0Hz"
+        # en-US-ChristopherNeural (Male, smooth, documentary style)
+        self.voice = "en-US-ChristopherNeural"  # Deeper, less robotic voice
+        self.rate = "+0%"  # Natural speed for better emotion
+        self.pitch = "-2Hz" # Slightly deeper for cosmic vibe
 
     async def generate_audio(self, text: str, output_path: str):
         """

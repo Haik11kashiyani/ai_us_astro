@@ -197,17 +197,17 @@
            ===================== */
         #header-text {
             position: absolute;
-            top: 60px;
+            top: 80px;
             width: 100%;
             text-align: center;
             font-family: 'Cinzel', serif;
-            font-size: 38px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.9);
-            letter-spacing: 8px;
+            font-size: 44px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 6px;
             z-index: 15;
             text-transform: uppercase;
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            text-shadow: 0 0 20px rgba(156, 39, 176, 0.8);
         }
 
         /* =====================
@@ -215,11 +215,11 @@
            ===================== */
         #zodiac-container {
             position: absolute;
-            top: 180px;
+            top: 220px;
             left: 50%;
             transform: translateX(-50%);
-            width: 480px;
-            height: 480px;
+            width: 600px;
+            height: 600px;
             z-index: 10;
             display: flex;
             justify-content: center;
@@ -229,34 +229,35 @@
         /* Glowing orbit rings */
         .orbit-ring {
             position: absolute;
-            border: 1px solid var(--glow, #9c27b0);
+            border: 2px solid var(--glow, #9c27b0);
             border-radius: 50%;
             opacity: 0;
+            box-shadow: 0 0 20px var(--glow, #9c27b0);
             animation: orbitPulse 4s ease-out infinite;
         }
 
         .orbit-ring:nth-child(1) {
-            width: 500px;
-            height: 500px;
+            width: 620px;
+            height: 620px;
             animation-delay: 0s;
         }
 
         .orbit-ring:nth-child(2) {
-            width: 540px;
-            height: 540px;
+            width: 680px;
+            height: 680px;
             animation-delay: 1s;
         }
 
         .orbit-ring:nth-child(3) {
-            width: 580px;
-            height: 580px;
+            width: 740px;
+            height: 740px;
             animation-delay: 2s;
         }
 
         @keyframes orbitPulse {
             0% {
                 transform: scale(0.9);
-                opacity: 0.8;
+                opacity: 0.6;
             }
 
             100% {
@@ -266,10 +267,10 @@
         }
 
         #zodiac-image {
-            width: 420px;
-            height: 420px;
+            width: 580px;
+            height: 580px;
             object-fit: contain;
-            filter: drop-shadow(0 0 50px var(--glow, #9c27b0));
+            filter: drop-shadow(0 0 60px var(--glow, #9c27b0));
             z-index: 11;
             animation: zodiacFloat 6s ease-in-out infinite;
         }
@@ -282,7 +283,7 @@
             }
 
             50% {
-                transform: translateY(-15px) scale(1.02);
+                transform: translateY(-20px) scale(1.05);
             }
         }
 
@@ -291,37 +292,35 @@
            ===================== */
         #text-container {
             position: absolute;
-            top: 780px;
+            top: 900px;
             left: 50%;
             transform: translateX(-50%);
-            width: 920px;
-            min-height: 400px;
+            width: 950px;
+            min-height: 500px;
             text-align: center;
             color: #fff;
             z-index: 15;
-            font-size: 48px;
-            font-weight: 300;
-            line-height: 1.7;
-            letter-spacing: 1px;
+            font-size: 56px;
+            font-weight: 500;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
 
-            /* Frosted Glass Card */
-            background: linear-gradient(135deg,
-                    rgba(20, 10, 40, 0.7) 0%,
-                    rgba(10, 5, 25, 0.8) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 70px 60px;
-            border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Clearer Glass Card */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
             box-shadow:
-                0 30px 60px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 20px 50px rgba(0, 0, 0, 0.8),
+                inset 0 0 30px rgba(255, 255, 255, 0.05);
 
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 8px;
+            gap: 12px;
             opacity: 0;
         }
 
@@ -330,19 +329,20 @@
         #text-container::after {
             content: '✦';
             position: absolute;
-            font-size: 24px;
+            font-size: 32px;
             color: var(--glow, #9c27b0);
-            opacity: 0.6;
+            opacity: 0.8;
+            text-shadow: 0 0 10px var(--glow);
         }
 
         #text-container::before {
-            top: 20px;
-            left: 30px;
+            top: 25px;
+            left: 35px;
         }
 
         #text-container::after {
-            bottom: 20px;
-            right: 30px;
+            bottom: 25px;
+            right: 35px;
         }
 
         /* =====================
@@ -350,21 +350,22 @@
            ===================== */
         .word {
             display: inline-block;
-            opacity: 0.35;
-            margin: 0 10px;
+            opacity: 0.5;
+            /* Increased base opacity for readability */
+            margin: 0 6px;
             transform-origin: center center;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: all 0.3s ease-out;
+            color: #e0e0e0;
         }
 
         .word.active {
             opacity: 1 !important;
-            transform: scale(1.25) !important;
-            color: var(--glow, #ce93d8) !important;
+            transform: scale(1.15) !important;
+            color: #ffffff !important;
             text-shadow:
-                0 0 20px var(--glow, #ce93d8),
-                0 0 40px var(--glow, #ce93d8),
-                0 0 60px rgba(206, 147, 216, 0.5) !important;
-            font-weight: 400;
+                0 0 15px var(--glow, #ce93d8),
+                0 0 30px var(--glow, #ce93d8) !important;
+            font-weight: 700;
         }
 
         /* =====================
