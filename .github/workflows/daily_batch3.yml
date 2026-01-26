@@ -1,4 +1,4 @@
-name: Daily Horoscope - Batch 3 (Libra, Scorpio, Sagittarius)
+ame: Daily Horoscope - Batch 3 (Libra, Scorpio, Sagittarius)
 on:
   workflow_dispatch:
   schedule:
