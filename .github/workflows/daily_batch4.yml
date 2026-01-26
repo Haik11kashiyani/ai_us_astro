@@ -1,0 +1,57 @@
+name: Daily Horoscope - Batch 4 (Capricorn, Aquarius, Pisces)
+on:
+  workflow_dispatch:
+  schedule:
+    # 3:00 AM EST = 8:00 AM UTC
+    - cron: "0 8 * * *"
+
+jobs:
+  produce-video:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        sign: ["Capricorn", "Aquarius", "Pisces"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Rate Limit Cooldown (4 Mins)
+        run: |
+          echo "⏳ Waiting 4 minutes for rate limits..."
+          sleep 240
+
+      - name: Run Production Studio
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_API_KEY_BACKUP: ${{ secrets.OPENROUTER_API_KEY_BACKUP }}
+          OPENROUTER_API_KEY_BACKUP_2: ${{ secrets.OPENROUTER_API_KEY_BACKUP_2 }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: |
+          python main.py --sign "${{ matrix.sign }}" --type shorts --upload
+
+      - name: Upload Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch4-${{ matrix.sign }}
+          path: outputs/*.mp4
+          retention-days: 7

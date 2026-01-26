@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+    <title>Stellar Horoscope</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1080px;
+            height: 1920px;
+            overflow: hidden;
+            font-family: 'Raleway', sans-serif;
+            background: #000;
+            position: relative;
+        }
+
+        /* =====================
+           COSMIC STARFIELD
+           ===================== */
+        .starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: var(--min-opacity);
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.3);
+            }
+        }
+
+        /* =====================
+           GALAXY NEBULA BACKGROUND
+           ===================== */
+        .nebula {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+            z-index: 2;
+            mix-blend-mode: screen;
+        }
+
+        #nebula1 {
+            width: 800px;
+            height: 800px;
+            top: -200px;
+            left: -200px;
+            background: radial-gradient(circle, var(--c1, #1a0533) 0%, transparent 70%);
+            animation: nebulaDrift 30s ease-in-out infinite alternate;
+        }
+
+        #nebula2 {
+            width: 600px;
+            height: 600px;
+            bottom: 200px;
+            right: -150px;
+            background: radial-gradient(circle, var(--c2, #0a1628) 0%, transparent 70%);
+            animation: nebulaDrift 25s ease-in-out infinite alternate-reverse;
+        }
+
+        #nebula3 {
+            width: 500px;
+            height: 500px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, var(--glow, #4a148c) 0%, transparent 60%);
+            opacity: 0.3;
+            animation: nebulaPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes nebulaDrift {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(50px, 30px) rotate(15deg);
+            }
+        }
+
+        @keyframes nebulaPulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.5;
+            }
+        }
+
+        /* =====================
+           CONSTELLATION LINES
+           ===================== */
+        .constellation-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            opacity: 0.15;
+        }
+
+        .constellation-line {
+            stroke: rgba(255, 255, 255, 0.5);
+            stroke-width: 1;
+            stroke-dasharray: 5, 10;
+            animation: constellationDraw 20s linear infinite;
+        }
+
+        @keyframes constellationDraw {
+            0% {
+                stroke-dashoffset: 0;
+            }
+
+            100% {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        /* =====================
+           ZODIAC RING
+           ===================== */
+        .zodiac-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px;
+            height: 900px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            z-index: 4;
+            animation: ringRotate 120s linear infinite;
+        }
+
+        .zodiac-ring::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 1px dashed rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        @keyframes ringRotate {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* =====================
+           HEADER - CHANNEL BRAND
+           ===================== */
+        #header-text {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 38px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 8px;
+            z-index: 15;
+            text-transform: uppercase;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        /* =====================
+           ZODIAC SYMBOL CONTAINER
+           ===================== */
+        #zodiac-container {
+            position: absolute;
+            top: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 480px;
+            height: 480px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Glowing orbit rings */
+        .orbit-ring {
+            position: absolute;
+            border: 1px solid var(--glow, #9c27b0);
+            border-radius: 50%;
+            opacity: 0;
+            animation: orbitPulse 4s ease-out infinite;
+        }
+
+        .orbit-ring:nth-child(1) {
+            width: 500px;
+            height: 500px;
+            animation-delay: 0s;
+        }
+
+        .orbit-ring:nth-child(2) {
+            width: 540px;
+            height: 540px;
+            animation-delay: 1s;
+        }
+
+        .orbit-ring:nth-child(3) {
+            width: 580px;
+            height: 580px;
+            animation-delay: 2s;
+        }
+
+        @keyframes orbitPulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        #zodiac-image {
+            width: 420px;
+            height: 420px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 50px var(--glow, #9c27b0));
+            z-index: 11;
+            animation: zodiacFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes zodiacFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-15px) scale(1.02);
+            }
+        }
+
+        /* =====================
+           CONTENT CARD
+           ===================== */
+        #text-container {
+            position: absolute;
+            top: 780px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 920px;
+            min-height: 400px;
+            text-align: center;
+            color: #fff;
+            z-index: 15;
+            font-size: 48px;
+            font-weight: 300;
+            line-height: 1.7;
+            letter-spacing: 1px;
+
+            /* Frosted Glass Card */
+            background: linear-gradient(135deg,
+                    rgba(20, 10, 40, 0.7) 0%,
+                    rgba(10, 5, 25, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 70px 60px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 8px;
+            opacity: 0;
+        }
+
+        /* Corner decorations */
+        #text-container::before,
+        #text-container::after {
+            content: '✦';
+            position: absolute;
+            font-size: 24px;
+            color: var(--glow, #9c27b0);
+            opacity: 0.6;
+        }
+
+        #text-container::before {
+            top: 20px;
+            left: 30px;
+        }
+
+        #text-container::after {
+            bottom: 20px;
+            right: 30px;
+        }
+
+        /* =====================
+           WORD STYLING
+           ===================== */
+        .word {
+            display: inline-block;
+            opacity: 0.35;
+            margin: 0 10px;
+            transform-origin: center center;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .word.active {
+            opacity: 1 !important;
+            transform: scale(1.25) !important;
+            color: var(--glow, #ce93d8) !important;
+            text-shadow:
+                0 0 20px var(--glow, #ce93d8),
+                0 0 40px var(--glow, #ce93d8),
+                0 0 60px rgba(206, 147, 216, 0.5) !important;
+            font-weight: 400;
+        }
+
+        /* =====================
+           SHOOTING STARS
+           ===================== */
+        .shooting-star {
+            position: absolute;
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            z-index: 5;
+            transform: rotate(-45deg);
+            animation: shoot 4s ease-in-out infinite;
+        }
+
+        .shooting-star:nth-child(1) {
+            top: 15%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shooting-star:nth-child(2) {
+            top: 25%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .shooting-star:nth-child(3) {
+            top: 60%;
+            left: 5%;
+            animation-delay: 3.5s;
+        }
+
+        @keyframes shoot {
+            0% {
+                transform: translateX(-100px) translateY(-100px) rotate(-45deg);
+                opacity: 0;
+            }
+
+            5% {
+                opacity: 1;
+            }
+
+            15% {
+                transform: translateX(300px) translateY(300px) rotate(-45deg);
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* =====================
+           BOTTOM COSMIC DUST
+           ===================== */
+        .cosmic-dust {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(to top,
+                    rgba(20, 10, 50, 0.8) 0%,
+                    transparent 100%);
+            z-index: 6;
+        }
+
+        /* =====================
+           ELEMENT INDICATORS
+           ===================== */
+        .element-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.15;
+        }
+
+        .element-glow.fire {
+            background: radial-gradient(ellipse at 50% 30%, #ff6b35 0%, transparent 50%);
+        }
+
+        .element-glow.water {
+            background: radial-gradient(ellipse at 50% 30%, #00b4d8 0%, transparent 50%);
+        }
+
+        .element-glow.earth {
+            background: radial-gradient(ellipse at 50% 30%, #38b000 0%, transparent 50%);
+        }
+
+        .element-glow.air {
+            background: radial-gradient(ellipse at 50% 30%, #e0aaff 0%, transparent 50%);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+
+    <!-- Nebula Clouds -->
+    <div class="nebula" id="nebula1"></div>
+    <div class="nebula" id="nebula2"></div>
+    <div class="nebula" id="nebula3"></div>
+
+    <!-- Element Glow -->
+    <div class="element-glow" id="elementGlow"></div>
+
+    <!-- Constellation Lines -->
+    <svg class="constellation-container" viewBox="0 0 1080 1920">
+        <line class="constellation-line" x1="100" y1="200" x2="300" y2="350" />
+        <line class="constellation-line" x1="300" y1="350" x2="250" y2="500" />
+        <line class="constellation-line" x1="800" y1="150" x2="950" y2="300" />
+        <line class="constellation-line" x1="950" y1="300" x2="880" y2="450" />
+        <line class="constellation-line" x1="150" y1="1400" x2="300" y2="1550" />
+        <line class="constellation-line" x1="780" y1="1500" x2="920" y2="1400" />
+    </svg>
+
+    <!-- Zodiac Ring -->
+    <div class="zodiac-ring"></div>
+
+    <!-- Shooting Stars -->
+    <div class="shooting-star"></div>
+    <div class="shooting-star"></div>
+    <div class="shooting-star"></div>
+
+    <!-- Header -->
+    <div id="header-text"></div>
+
+    <!-- Zodiac Symbol -->
+    <div id="zodiac-container">
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <div class="orbit-ring"></div>
+        <img id="zodiac-image" src="" alt="Zodiac Sign">
+    </div>
+
+    <!-- Content Card -->
+    <div id="text-container"></div>
+
+    <!-- Bottom Dust -->
+    <div class="cosmic-dust"></div>
+
+    <script>
+        // === GENERATE STARFIELD ===
+        function createStarfield() {
+            const container = document.getElementById('starfield');
+            const starCount = 150;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+                star.style.setProperty('--min-opacity', Math.random() * 0.3 + 0.2);
+                star.style.animationDelay = Math.random() * 5 + 's';
+
+                container.appendChild(star);
+            }
+        }
+        createStarfield();
+
+        // === URL PARAMS ===
+        const urlParams = new URLSearchParams(window.location.search);
+        const signImg = urlParams.get('img');
+        const text = urlParams.get('text') || "";
+        const header = urlParams.get('header') || "";
+        const c1 = urlParams.get('c1') || "#1a0533";
+        const c2 = urlParams.get('c2') || "#0a1628";
+        const c3 = urlParams.get('c3') || "#050510";
+        const glow = urlParams.get('glow') || "#9c27b0";
+        const element = urlParams.get('elem') || "neutral";
+
+        // === SETUP ===
+        if (signImg) document.getElementById('zodiac-image').src = signImg;
+
+        // Element-based glow
+        const glowEl = document.getElementById('elementGlow');
+        if (element && element !== 'neutral') {
+            glowEl.classList.add(element);
+        }
+
+        // Header
+        if (header) {
+            const headerEl = document.getElementById('header-text');
+            headerEl.textContent = header;
+            gsap.set(headerEl, { opacity: 0, y: -30 });
+            gsap.to(headerEl, { opacity: 1, y: 0, duration: 1.5, ease: "power3.out", delay: 0.3 });
+        }
+
+        // CSS Variables
+        document.documentElement.style.setProperty('--c1', c1);
+        document.documentElement.style.setProperty('--c2', c2);
+        document.documentElement.style.setProperty('--c3', c3);
+        document.documentElement.style.setProperty('--glow', glow);
+
+        // Text Container
+        const container = document.getElementById('text-container');
+        const words = text.split(' ').filter(w => w.length > 0);
+        container.innerHTML = words.map(w => `<span class="word">${w}</span>`).join(' ');
+        const wordEls = document.querySelectorAll('.word');
+
+        const animStyle = urlParams.get('anim') || 'cosmic';
+
+        // === GSAP TIMELINE ===
+        const tl = gsap.timeline({ paused: true });
+
+        // Nebula movement
+        tl.to("#nebula1, #nebula2", {
+            rotation: 30,
+            scale: 1.2,
+            duration: 60,
+            ease: "none"
+        }, 0);
+
+        // Zodiac image subtle pulse
+        tl.to("#zodiac-image", {
+            filter: `drop-shadow(0 0 80px ${glow})`,
+            duration: 3,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+        }, 0);
+
+        // === ANIMATION STYLES ===
+        switch (animStyle) {
+            case 'cosmic':
+                // Cosmic reveal - words fade in from starlight
+                tl.fromTo("#text-container",
+                    { opacity: 0, scale: 0.95 },
+                    { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" }, 0);
+                tl.fromTo(".word",
+                    { opacity: 0, y: 20, filter: "blur(8px)" },
+                    { opacity: 0.35, y: 0, filter: "blur(0px)", duration: 1, stagger: 0.06, ease: "power3.out" }, 0.3);
+                break;
+
+            case 'stellar':
+                // Stars appear one by one
+                tl.fromTo("#text-container", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 0);
+                tl.fromTo(".word",
+                    { opacity: 0, scale: 0, rotation: -15 },
+                    { opacity: 0.35, scale: 1, rotation: 0, duration: 0.6, stagger: 0.08, ease: "back.out(1.5)" }, 0.2);
+                break;
+
+            case 'nebula':
+                // Flowing nebula effect
+                tl.fromTo("#text-container",
+                    { opacity: 0, x: -30 },
+                    { opacity: 1, x: 0, duration: 1.2, ease: "power2.out" }, 0);
+                tl.fromTo(".word",
+                    { opacity: 0, x: -20 },
+                    { opacity: 0.35, x: 0, duration: 0.8, stagger: 0.05, ease: "power2.out" }, 0.3);
+                break;
+
+            case 'constellation':
+                // Words connect like constellation points
+                tl.fromTo("#text-container", { opacity: 0 }, { opacity: 1, duration: 1 }, 0);
+                tl.fromTo(".word",
+                    { opacity: 0, scale: 0.5 },
+                    { opacity: 0.35, scale: 1, duration: 0.4, stagger: 0.1, ease: "power1.out" }, 0.2);
+                break;
+
+            case 'aurora':
+                // Northern lights wave effect
+                tl.fromTo("#text-container",
+                    { opacity: 0, y: 40 },
+                    { opacity: 1, y: 0, duration: 1.5, ease: "power3.out" }, 0);
+                tl.fromTo(".word",
+                    { opacity: 0, y: 30, rotationX: 30 },
+                    { opacity: 0.35, y: 0, rotationX: 0, duration: 0.7, stagger: 0.04, ease: "power2.out" }, 0.4);
+                break;
+
+            default:
+                tl.fromTo("#text-container", { opacity: 0 }, { opacity: 1, duration: 1 }, 0);
+                tl.fromTo(".word", { opacity: 0 }, { opacity: 0.35, duration: 0.5, stagger: 0.05 }, 0.2);
+        }
+
+        // === CONTROL INTERFACE ===
+        window.setWordActive = (index) => {
+            wordEls.forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        };
+
+        window.seek = (time) => {
+            tl.seek(time);
+        };
+    </script>
+</body>
+
+</html>
