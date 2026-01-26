@@ -399,17 +399,24 @@ class EditorEngine:
             sign_key = self._get_sign_key(sign_name) # e.g. "aries"
             # Try to match folder (case-insensitive)
             # Music folders are now "Aries", "Taurus", etc.
-            music_subdirs = [d for d in os.listdir(os.path.join(base_music_folder, "music")) 
-                             if os.path.isdir(os.path.join(base_music_folder, "music", d))]
             
-            matching_dir = next((d for d in music_subdirs if d.lower() == sign_key.lower()), None)
-            
-            if matching_dir:
-                sign_music_path = os.path.join(base_music_folder, "music", matching_dir)
-                sign_tracks = [f for f in os.listdir(sign_music_path) if f.endswith(('.mp3', '.wav', '.m4a'))]
-                if sign_tracks:
-                    logging.info(f"   found sign specific music for {sign_name}")
-                    target_list = [os.path.join(sign_music_path, t) for t in sign_tracks]
+            # CHECK: Does assets/music/music exist?
+            sign_music_base = os.path.join(base_music_folder, "music")
+            if os.path.exists(sign_music_base) and os.path.isdir(sign_music_base):
+                try:
+                    music_subdirs = [d for d in os.listdir(sign_music_base) 
+                                     if os.path.isdir(os.path.join(sign_music_base, d))]
+                    
+                    matching_dir = next((d for d in music_subdirs if d.lower() == sign_key.lower()), None)
+                    
+                    if matching_dir:
+                        sign_music_path = os.path.join(sign_music_base, matching_dir)
+                        sign_tracks = [f for f in os.listdir(sign_music_path) if f.endswith(('.mp3', '.wav', '.m4a'))]
+                        if sign_tracks:
+                            logging.info(f"   ✅ Using sign-specific music for {sign_name}")
+                            target_list = [os.path.join(sign_music_path, t) for t in sign_tracks]
+                except Exception as e:
+                    logging.warning(f"   ⚠️ Could not access sign music folder: {e}")
 
         # 2. If no sign specific music, use generic folder
         if not target_list:
