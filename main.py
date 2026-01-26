@@ -412,14 +412,14 @@ def main():
             est = pytz.timezone('America/New_York')
             now_est = datetime.now(est)
             
-            # Target: 6:30 AM EST Today
-            target_time = now_est.replace(hour=6, minute=30, second=0, microsecond=0)
+            # Target: 6:00 AM EST Today (Sharp)
+            target_time = now_est.replace(hour=6, minute=0, second=0, microsecond=0)
             
-            # If past 6:30 AM, schedule for TOMORROW
+            # If past 6:00 AM, schedule for TOMORROW
             if now_est > target_time:
                 target_time = target_time + timedelta(days=1)
                 
-            print(f"   📅 Target Upload Time: {target_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            print(f"   📅 Scheduled Publish Time: {target_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
             # Convert to UTC for API
             utc_publish_at = None

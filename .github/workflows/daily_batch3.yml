@@ -2,8 +2,8 @@ name: Daily Horoscope - Batch 3 (Libra, Scorpio, Sagittarius)
 on:
   workflow_dispatch:
   schedule:
-    # 2:30 AM EST = 7:30 AM UTC
-    - cron: "30 7 * * *"
+    # 4:30 AM EST = 9:30 AM UTC (Videos will publish at 6 AM EST)
+    - cron: "30 9 * * *"
 
 jobs:
   produce-video:
@@ -39,8 +39,6 @@ jobs:
       - name: Run Production Studio
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_API_KEY_BACKUP: ${{ secrets.OPENROUTER_API_KEY_BACKUP }}
-          OPENROUTER_API_KEY_BACKUP_2: ${{ secrets.OPENROUTER_API_KEY_BACKUP_2 }}
           GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
