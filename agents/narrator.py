@@ -19,7 +19,7 @@ class NarratorAgent:
         # en-US-GuyNeural (Male, authoritative)
         # en-US-ChristopherNeural (Male, smooth, documentary style)
         self.voice = "en-US-ChristopherNeural"  # Deeper, less robotic voice
-        self.rate = "+0%"  # Natural speed for better emotion
+        self.rate = "-10%"  # Slower, more mystical/deliberate
         self.pitch = "-2Hz" # Slightly deeper for cosmic vibe
 
     async def generate_audio(self, text: str, output_path: str):
