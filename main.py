@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime
 import pytz
+import re
 
 from agents.astrologer import AstrologerAgent
 from agents.director import DirectorAgent
@@ -81,9 +82,12 @@ def produce_video_from_script(agents, sign, title_suffix, script, date_str, them
     for section in active_sections:
         original_text = str(script[section])
         
-        # Clean text for display and speech (same in English)
+        # Clean text for display and speech
         speech_text = original_text
-        display_text = original_text
+        
+        # Remove emotion tags from display text only (Narrator handles speech text cleaning internally)
+        # Using regex to remove (Happy), (Excited), etc. and any extra spaces
+        display_text = re.sub(r'\s*\((Happy|Excited|Serious|Caution|Warm)\)\s*', ' ', original_text, flags=re.IGNORECASE).strip()
         
         # Format section-specific content
         if section == "lucky_color":

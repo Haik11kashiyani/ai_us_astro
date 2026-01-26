@@ -50,7 +50,7 @@ class NarratorAgent:
         
         # Remove any other potential bracketed text (backups)
         import re
-        clean_text = re.sub(r'\s*\(.*?\)\s*', ' ', clean_text).strip()
+        clean_text = re.sub(r'\s*\(.*?\)\s*', ' ', clean_text, flags=re.IGNORECASE).strip()
         
         logging.info(f"🎙️ Narrator: Speaking ({active_style or 'Default'}) {len(clean_text)} chars...")
         subtitle_path = output_path.replace(".mp3", ".json")
