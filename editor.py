@@ -304,6 +304,7 @@ class EditorEngine:
         safe_text = text.replace('"', '&quot;').replace('\n', ' ')
         
         # 2. Inject CSS Variables via Style Block (Bypassing JS injection for styles)
+        # also adding explicit header-text styling in case it was missing
         css_block = f"""
         <style>
             :root {{
@@ -313,6 +314,20 @@ class EditorEngine:
                 --glow: {glow};
             }}
             .element-glow {{ background: radial-gradient(ellipse at 50% 30%, {glow} 0%, transparent 50%); }}
+            
+            /* FORCE HEADER STYLING */
+            #header-text {{
+                position: absolute;
+                top: 80px; 
+                width: 100%;
+                text-align: center;
+                font-family: 'Cinzel', serif;
+                font-size: 60px;
+                color: #FFD700;
+                text-shadow: 0 0 20px #FFD700;
+                z-index: 20;
+                opacity: 1 !important; /* Force visible */
+            }}
         </style>
         """
         
@@ -335,13 +350,14 @@ class EditorEngine:
              final_html = final_html.replace('src=""', f'src="{sign_img_b64}"')
         
         # Inject Data for JS (still needed for word highlighting/splitting)
+        # CRITICAL FIX: Set imgSrc to "" so JS doesn't overwrite our baked-in base64 src!
         injection_script = f"""
         <script>
             window.INJECTED_DATA = {{
                 text: "{safe_text}",
                 header: "{safe_header}",
                 animStyle: "{anim_style}",
-                imgSrc: "INJECTED_VIA_TAG" 
+                imgSrc: "" 
             }};
         </script>
         """
