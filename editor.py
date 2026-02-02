@@ -193,7 +193,13 @@ class EditorEngine:
         """
         sign_key = self._get_sign_key(sign_name)
 
-        # Folders to search in order
+        # 1. Direct Lookup (Most robust)
+        # Try finding exactly "{sign}.png" in the main photos folder
+        direct_path = os.path.join("assets", "12_photos", f"{sign_key}.png")
+        if os.path.exists(direct_path):
+            return os.path.abspath(direct_path)
+
+        # 2. Folder Search (Fallback)
         folders = ["12_photos"]
         if period_type == "Monthly": folders.insert(0, "monthly_12_photos")
         elif period_type == "Yearly": folders.insert(0, "yearly_12_photos")
@@ -397,32 +403,27 @@ class EditorEngine:
         
         base_music_folder = os.path.join("assets", "music")
         
-        # 1. Try Sign-Specific Music Folder first
-        target_list = []
-        if sign_name:
-            sign_key = self._get_sign_key(sign_name) # e.g. "aries"
-            # Try to match folder (case-insensitive)
-            # Music folders are now "Aries", "Taurus", etc.
-            
-            # CHECK: Does assets/music/music exist?
-            sign_music_base = os.path.join(base_music_folder, "music")
-            if os.path.exists(sign_music_base) and os.path.isdir(sign_music_base):
-                try:
-                    music_subdirs = [d for d in os.listdir(sign_music_base) 
-                                     if os.path.isdir(os.path.join(sign_music_base, d))]
-                    
-                    matching_dir = next((d for d in music_subdirs if d.lower() == sign_key.lower()), None)
-                    
-                    if matching_dir:
-                        sign_music_path = os.path.join(sign_music_base, matching_dir)
-                        sign_tracks = [f for f in os.listdir(sign_music_path) if f.endswith(('.mp3', '.wav', '.m4a'))]
-                        if sign_tracks:
-                            logging.info(f"   ✅ Using sign-specific music for {sign_name}")
-                            target_list = [os.path.join(sign_music_path, t) for t in sign_tracks]
-                except Exception as e:
-                    logging.warning(f"   ⚠️ Could not access sign music folder: {e}")
+        # 1. SKIP Sign-Specific Music Folder (Contains Vedic/Chanting tracks which are not fit for Western style)
+        # target_list = []
+        # if sign_name:
+        #     sign_key = self._get_sign_key(sign_name) 
+        #     sign_music_base = os.path.join(base_music_folder, "music")
+        #     if os.path.exists(sign_music_base) and os.path.isdir(sign_music_base):
+        #         try:
+        #             music_subdirs = [d for d in os.listdir(sign_music_base) 
+        #                              if os.path.isdir(os.path.join(sign_music_base, d))]
+        #             matching_dir = next((d for d in music_subdirs if d.lower() == sign_key.lower()), None)
+        #             if matching_dir:
+        #                 sign_music_path = os.path.join(sign_music_base, matching_dir)
+        #                 sign_tracks = [f for f in os.listdir(sign_music_path) if f.endswith(('.mp3', '.wav', '.m4a'))]
+        #                 if sign_tracks:
+        #                     logging.info(f"   ✅ Using sign-specific music for {sign_name}")
+        #                     target_list = [os.path.join(sign_music_path, t) for t in sign_tracks]
+        #         except Exception as e:
+        #             logging.warning(f"   ⚠️ Could not access sign music folder: {e}")
 
-        # 2. If no sign specific music, use generic folder
+        # 2. Always use Generic Western/Cosmic Music
+        target_list = [] # Reset to ensure we use generic
         if not target_list:
             if not os.path.exists(base_music_folder):
                 os.makedirs(base_music_folder, exist_ok=True)
