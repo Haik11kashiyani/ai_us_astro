@@ -343,11 +343,14 @@ class EditorEngine:
         # Replacing the empty <div id="header-text"></div> with filled one
         final_html = final_html.replace('<div id="header-text"></div>', f'<div id="header-text">{safe_header}</div>')
         
-        # Replacing the Image Tag
+        # Replacing the Image Tag via Explicit Placeholder
+        # This is the most robust method
         if sign_img_b64:
-             # Shorten log
              logging.info(f"   🖼️ Injecting Base64 Image ({len(sign_img_b64)} chars)")
-             final_html = final_html.replace('src=""', f'src="{sign_img_b64}"')
+             final_html = final_html.replace('{{IMAGE_SRC}}', sign_img_b64)
+        else:
+             # Clean up placeholder if no image
+             final_html = final_html.replace('{{IMAGE_SRC}}', '')
         
         # Inject Data for JS (still needed for word highlighting/splitting)
         # CRITICAL FIX: Set imgSrc to "" so JS doesn't overwrite our baked-in base64 src!
