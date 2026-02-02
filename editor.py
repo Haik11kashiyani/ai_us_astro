@@ -287,89 +287,84 @@ class EditorEngine:
         # Let's try passing via JS injection after page load, OR just URL if < 2MB. 
         # Playwright evaluate is safest.
         
-        # --- REFACTOR: DIRECT HTML INJECTION ---
-        # Instead of URL params, we will read the template and inject values directly.
-        # This is strictly more robust for Base64 images and Special Characters in titles.
+        # --- REFACTOR: TEMP FILE WRITING ---
+        # The most reliable way to handle large Base64 images and complex text is to 
+        # write a temporary HTML file with everything "baked in" (static HTML).
+        # This bypasses all URL limits and JS injection timing issues.
         
         try:
             with open(self.template_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
+                html_template = f.read()
         except Exception as e:
             logging.error(f"❌ Could not read template file: {e}")
             return []
 
-        # 1. Inject Header Text (Handle escaping)
+        # 1. Prepare Content
         safe_header = header_text.replace('"', '&quot;').replace("'", "&apos;")
+        safe_text = text.replace('"', '&quot;').replace('\n', ' ')
         
-        # 2. Inject Image Base64
-        # We will replace the src="" of the image tag or a placeholder
-        # We will use a robust replacement for the JS variables block we will create
-        
-        # 3. Inject CSS Variables
-        css_vars = f"""
+        # 2. Inject CSS Variables via Style Block (Bypassing JS injection for styles)
+        css_block = f"""
+        <style>
             :root {{
                 --c1: {grad[0]};
                 --c2: {grad[1]};
                 --c3: {grad[2]};
                 --glow: {glow};
-                --duration: 3s;
-                --min-opacity: 0.2;
             }}
-            .element-glow {{
-                /* Dynamic Element Injection */
-            }}
-        """
-        
-        # 4. Inject Content Variables for JS
-        # We need to escape the text for JS string
-        safe_text = text.replace('"', '\\"').replace('\n', ' ')
-        
-        # Helper to inject into HTML head or body
-        # We will append a script block and style block
-        
-        injection_script = f"""
-        <style>
-            {css_vars}
             .element-glow {{ background: radial-gradient(ellipse at 50% 30%, {glow} 0%, transparent 50%); }}
         </style>
+        """
+        
+        # 3. Create the Hydrated HTML
+        # We replace specific placeholders or append a script that runs IMMEDIATELY
+        # But even better, we simply replace the empty tags in the template with filled ones.
+        
+        final_html = html_template
+        final_html = final_html.replace('</head>', f'{css_block}</head>')
+        
+        # HARD REPLACEMENT of Content for 100% Reliability
+        # Using a regex-like replace or just string replace if we know the structure
+        # Replacing the empty <div id="header-text"></div> with filled one
+        final_html = final_html.replace('<div id="header-text"></div>', f'<div id="header-text">{safe_header}</div>')
+        
+        # Replacing the Image Tag
+        if sign_img_b64:
+             # Shorten log
+             logging.info(f"   🖼️ Injecting Base64 Image ({len(sign_img_b64)} chars)")
+             final_html = final_html.replace('src=""', f'src="{sign_img_b64}"')
+        
+        # Inject Data for JS (still needed for word highlighting/splitting)
+        injection_script = f"""
         <script>
             window.INJECTED_DATA = {{
                 text: "{safe_text}",
                 header: "{safe_header}",
                 animStyle: "{anim_style}",
-                imgSrc: "{sign_img_b64}" 
+                imgSrc: "INJECTED_VIA_TAG" 
             }};
-            
-            // Auto-run setup when DOM is ready
-            document.addEventListener('DOMContentLoaded', () => {{
-                // 1. Header
-                const h = document.getElementById('header-text');
-                if(h) {{
-                    h.textContent = window.INJECTED_DATA.header;
-                    gsap.set(h, {{ opacity: 0, y: -30 }});
-                    gsap.to(h, {{ opacity: 1, y: 0, duration: 1.5, ease: "power3.out", delay: 0.3 }});
-                }}
-                
-                // 2. Image
-                const img = document.getElementById('zodiac-image');
-                if(img && window.INJECTED_DATA.imgSrc) img.src = window.INJECTED_DATA.imgSrc;
-                
-                // 3. Text
-                const container = document.getElementById('text-container');
-                const words = window.INJECTED_DATA.text.split(' ').filter(w => w.length > 0);
-                container.innerHTML = words.map(w => `<span class="word">${{w}}</span>`).join(' ');
-                
-                // 4. Animation Trigger
-                // (Existing logic in template might need to be triggered or we just let it run if it reads from URL... 
-                //  We need to modify the template to prefer window.INJECTED_DATA if present)
-            }});
         </script>
         """
+        final_html = final_html.replace('<body>', f'<body>{injection_script}')
         
-        # Insert injection before </head>
-        final_html = html_content.replace("</head>", f"{injection_script}</head>")
+        # 4. Write to Temp File
+        if len(safe_header) > 10:
+             # sanitise filename
+             safe_fname = "".join(x for x in safe_header if x.isalnum())[:20]
+        else:
+             safe_fname = f"scene_{hash(text)}"
+             
+        temp_html_path = os.path.abspath(f"assets/temp/{safe_fname}.html")
         
-        logging.info(f"   🌌 Launching Playwright ({anim_style.upper()}) for cosmic scene ({duration}s)...")
+        try:
+             with open(temp_html_path, "w", encoding="utf-8") as f:
+                 f.write(final_html)
+        except Exception as e:
+             logging.error(f"❌ Failed to write temp html: {e}")
+             return []
+
+        full_file_url = f"file:///{temp_html_path.replace(os.sep, '/')}"
+        logging.info(f"   🌌 Launching Playwright ({anim_style.upper()}) -> {full_file_url}")
         
         frames = []
         fps = 30
@@ -382,15 +377,14 @@ class EditorEngine:
             )
             page = await browser.new_page(viewport={"width": 1080, "height": 1920})
             
-            # Use set_content instead of goto
-            await page.set_content(final_html)
+            # Load the Temp File
+            await page.goto(full_file_url)
             
-            # Trigger the animation logic explicitly if needed, or rely on the script we injected.
-            # The original template reads URL params. We need to ensure it uses our injected data 
-            # OR we simply override the URL param reading logic in the template (next step).
-            # For now, let's assume we will update the template to look for window.INJECTED_DATA.
-            
-            await page.wait_for_selector(f"#text-container") 
+            # Wait for text container to be populated by JS
+            try:
+                await page.wait_for_selector(f"#text-container .word", timeout=5000)
+            except:
+                logging.warning("   ⚠️ Text container load timed out. Continuing anyway...")
             
             logging.info(f"   ✨ Capturing {total_frames} cosmic frames...")
             
@@ -418,6 +412,11 @@ class EditorEngine:
                 frames.append(frame_path)
             
             await browser.close()
+            
+            # Cleanup Temp File
+            try:
+                 os.remove(temp_html_path)
+            except: pass
             
         return frames
 
