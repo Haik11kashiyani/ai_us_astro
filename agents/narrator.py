@@ -18,9 +18,9 @@ class NarratorAgent:
         # en-US-AriaNeural (Female, engaging)
         # en-US-GuyNeural (Male, authoritative)
         # en-US-ChristopherNeural (Male, smooth, documentary style)
-        self.voice = "en-US-GuyNeural"  # Supports emotional styles
+        self.voice = "en-US-ChristopherNeural"  # Supports emotional styles
         self.rate = "+0%"
-        self.pitch = "-2Hz" # Deeper for cosmic vibe (Guy is tenor, -2Hz helps)
+        self.pitch = "+0Hz" # Natural deep voice
 
     async def generate_audio(self, text: str, output_path: str):
         """

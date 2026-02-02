@@ -296,8 +296,8 @@
            ===================== */
         #text-container {
             position: absolute;
-            top: 880px;
-            /* Moved UP to fix cutoff */
+            top: 1100px;
+            /* Moved DOWN to fix overlap with centered zodiac ring */
             left: 50%;
             transform: translateX(-50%);
             width: 950px;
@@ -310,22 +310,23 @@
             line-height: 1.6;
             letter-spacing: 0.5px;
 
-            /* Clearer Glass Card */
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 40px;
+            /* Clearer Glass Card with Darker Background */
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 50px;
             border-radius: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            /* Subtle Gold Border */
             box-shadow:
-                0 20px 50px rgba(0, 0, 0, 0.8),
+                0 20px 50px rgba(0, 0, 0, 0.9),
                 inset 0 0 30px rgba(255, 255, 255, 0.05);
 
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 12px;
+            gap: 14px;
             opacity: 0;
         }
 
@@ -355,7 +356,7 @@
            ===================== */
         .word {
             display: inline-block;
-            opacity: 0.5;
+            opacity: 0.7;
             /* Increased base opacity for readability */
             margin: 0 6px;
             transform-origin: center center;
@@ -365,11 +366,13 @@
 
         .word.active {
             opacity: 1 !important;
-            transform: scale(1.15) !important;
-            color: #ffffff !important;
+            transform: scale(1.2) !important;
+            color: #FFD700 !important;
+            /* GOLD Highlight */
             text-shadow:
-                0 0 15px var(--glow, #ce93d8),
-                0 0 30px var(--glow, #ce93d8) !important;
+                0 0 20px #FFD700,
+                0 0 40px #FFD700,
+                0 0 60px #FFA000 !important;
             font-weight: 700;
         }
 

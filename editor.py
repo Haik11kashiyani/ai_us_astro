@@ -252,15 +252,19 @@ class EditorEngine:
         element = style["element"]
         
         # Convert local path to file URL for browser
-        if sign_img:
+        if sign_img and os.path.exists(sign_img):
+            # Ensure forward slashes for URL
             sign_img_url = f"file:///{sign_img.replace(os.sep, '/')}"
+            logging.info(f"   🖼️ Zodiac Image verified: {sign_img_url}")
         else:
+            logging.warning(f"   ⚠️ Zodiac Image NOT found: {sign_img}")
             sign_img_url = ""
             
         # Construct URL with params
         import urllib.parse
         encoded_text = urllib.parse.quote(text)
         encoded_header = urllib.parse.quote(header_text)
+        encoded_img = urllib.parse.quote(sign_img_url) # Encode the image URL too to be safe
         
         url = (f"file:///{self.template_path.replace(os.sep, '/')}?text={encoded_text}&header={encoded_header}&img={sign_img_url}"
                f"&c1={grad[0].replace('#', '%23')}&c2={grad[1].replace('#', '%23')}&c3={grad[2].replace('#', '%23')}"
