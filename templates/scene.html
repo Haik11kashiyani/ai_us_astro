@@ -464,9 +464,15 @@
 
         // === URL PARAMS ===
         const urlParams = new URLSearchParams(window.location.search);
-        const signImg = urlParams.get('img');
-        const text = urlParams.get('text') || "";
-        const header = urlParams.get('header') || "";
+
+        // PREFER INJECTED DATA IF AVAILABLE (From Python set_content)
+        const injected = window.INJECTED_DATA || {};
+
+        const signImg = injected.imgSrc || urlParams.get('img');
+        const text = injected.text || urlParams.get('text') || "";
+        const header = injected.header || urlParams.get('header') || "";
+        const animStyle = injected.animStyle || urlParams.get('anim') || 'cosmic';
+
         const c1 = urlParams.get('c1') || "#1a0533";
         const c2 = urlParams.get('c2') || "#0a1628";
         const c3 = urlParams.get('c3') || "#050510";
@@ -490,7 +496,7 @@
             gsap.to(headerEl, { opacity: 1, y: 0, duration: 1.5, ease: "power3.out", delay: 0.3 });
         }
 
-        // CSS Variables
+        // CSS Variables (Python injects these via style block too, but this keeps URL param backwards compat)
         document.documentElement.style.setProperty('--c1', c1);
         document.documentElement.style.setProperty('--c2', c2);
         document.documentElement.style.setProperty('--c3', c3);
@@ -501,8 +507,6 @@
         const words = text.split(' ').filter(w => w.length > 0);
         container.innerHTML = words.map(w => `<span class="word">${w}</span>`).join(' ');
         const wordEls = document.querySelectorAll('.word');
-
-        const animStyle = urlParams.get('anim') || 'cosmic';
 
         // === GSAP TIMELINE ===
         const tl = gsap.timeline({ paused: true });
