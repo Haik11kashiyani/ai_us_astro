@@ -491,19 +491,21 @@
         // Header
         const headerEl = document.getElementById('header-text');
 
-        if (header && header !== "") {
+        // Only set content via JS if the element is empty (meaning Python didn't bake it in)
+        // AND if we actually have a header value to set
+        if (header && header !== "" && (!headerEl.textContent || headerEl.textContent.trim() === "")) {
             headerEl.textContent = header;
-            // Ensure it's visible by default first, then animate if GSAP runs
-            headerEl.style.opacity = "1";
+        }
 
-            // Optional: Still run animation
+        // Force visible (GSAP might hide it, let's reset)
+        headerEl.style.opacity = "1";
+
+        // Optional: Still run animation
+        if (headerEl.textContent.trim() !== "") {
             gsap.fromTo(headerEl,
                 { opacity: 0, y: -30 },
                 { opacity: 1, y: 0, duration: 1.5, ease: "power3.out", delay: 0.3 }
             );
-        } else if (headerEl && (!headerEl.textContent || headerEl.textContent === "")) {
-            // Fallback if header key was missing but we have some default text in title? No.
-            // Just leave it or hide it.
         }
 
         // CSS Variables (Python injects these via style block too, but this keeps URL param backwards compat)
