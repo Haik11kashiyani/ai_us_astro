@@ -226,6 +226,21 @@ class EditorEngine:
                 
         return None
 
+    def _image_to_base64(self, image_path: str) -> str:
+        """Encodes an image file to a base64 string."""
+        import base64
+        try:
+            with open(image_path, "rb") as img_file:
+                b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+                # Determine mime type (assume png for simplicity or detect)
+                mime_type = "image/png"
+                if image_path.lower().endswith(".jpg") or image_path.lower().endswith(".jpeg"):
+                    mime_type = "image/jpeg"
+                return f"data:{mime_type};base64,{b64_string}"
+        except Exception as e:
+            logging.warning(f"Failed to encode image {image_path}: {e}")
+            return ""
+
     async def _render_html_scene(self, sign_name, text, duration, subtitle_data, theme_override=None, header_text="", period_type="Daily", anim_style="cosmic"):
         """
         Renders the cosmic scene using Playwright.
@@ -234,7 +249,7 @@ class EditorEngine:
         frames_dir = f"assets/temp/frames_{hash(text)}"
         os.makedirs(frames_dir, exist_ok=True)
         
-        sign_img = self.get_sign_image_path(sign_name, period_type) or ""
+        sign_img_path = self.get_sign_image_path(sign_name, period_type)
         sign_key = self._get_sign_key(sign_name)
         
         # Get style: COLOR_THEME > SIGN_STYLES > Fallback
@@ -257,22 +272,27 @@ class EditorEngine:
         glow = style["glow"]
         element = style["element"]
         
-        # Convert local path to file URL for browser
-        if sign_img and os.path.exists(sign_img):
-            # Ensure forward slashes for URL
-            sign_img_url = f"file:///{sign_img.replace(os.sep, '/')}"
-            logging.info(f"   🖼️ Zodiac Image verified: {sign_img_url}")
+        # Convert local path to Base64 (Reliable!)
+        sign_img_b64 = ""
+        if sign_img_path and os.path.exists(sign_img_path):
+            sign_img_b64 = self._image_to_base64(sign_img_path)
+            logging.info(f"   🖼️ Zodiac Image Encoded: {len(sign_img_b64)} chars")
         else:
-            logging.warning(f"   ⚠️ Zodiac Image NOT found: {sign_img}")
-            sign_img_url = ""
+            logging.warning(f"   ⚠️ Zodiac Image NOT found: {sign_img_path}")
             
-        # Construct URL with params
+        # Construct URL with params (Passing headers, but image is handled via JS variable injection if too long, or param)
+        # Base64 strings can be long, passing via URL might hit limits. 
+        # Safer strategy: Write a temp HTML file with injected variables? 
+        # OR: Just pass it if it's not huge (Icons are usually small).
+        # Let's try passing via JS injection after page load, OR just URL if < 2MB. 
+        # Playwright evaluate is safest.
+        
         import urllib.parse
         encoded_text = urllib.parse.quote(text)
         encoded_header = urllib.parse.quote(header_text)
-        encoded_img = urllib.parse.quote(sign_img_url) # Encode the image URL too to be safe
         
-        url = (f"file:///{self.template_path.replace(os.sep, '/')}?text={encoded_text}&header={encoded_header}&img={sign_img_url}"
+        # We will NOT pass img in URL to avoid length issues. We'll inject it.
+        url = (f"file:///{self.template_path.replace(os.sep, '/')}?text={encoded_text}&header={encoded_header}"
                f"&c1={grad[0].replace('#', '%23')}&c2={grad[1].replace('#', '%23')}&c3={grad[2].replace('#', '%23')}"
                f"&glow={glow.replace('#', '%23')}&elem={element}&anim={anim_style}")
         
@@ -290,6 +310,11 @@ class EditorEngine:
             page = await browser.new_page(viewport={"width": 1080, "height": 1920})
             
             await page.goto(url)
+            
+            # INJECT IMAGE DIRECTLY
+            if sign_img_b64:
+                await page.evaluate(f"window.setImage('{sign_img_b64}')")
+            
             await page.wait_for_selector(f"#text-container") 
             
             logging.info(f"   ✨ Capturing {total_frames} cosmic frames...")
@@ -378,12 +403,17 @@ class EditorEngine:
             except Exception as e:
                 logging.warning(f"   ⚠️ Could not add background music: {e}")
 
-        # --- STRICT 59 SECOND LIMIT ---
+        # --- FADE OUT & LIMIT ---
+        # Add 1 second Fade Out for smooth ending
+        final_video = final_video.fadeout(1.0) # Audio fadeout
+        # Video fadeout requires crossfade or just fadeout effect if supported, manual fadeout:
+        final_video = vfx.fadeout(final_video, 1.0)
+        
         MAX_DURATION = 59.0
         if final_video.duration > MAX_DURATION:
             logging.warning(f"⚠️ Video duration {final_video.duration}s exceeds {MAX_DURATION}s. Trimming...")
             final_video = final_video.subclip(0, MAX_DURATION)
-            final_video = final_video.fadeout(0.2)
+            final_video = final_video.fadeout(0.2) # Quick fade if trimmed
         
         # Write final video
         logging.info(f"   📹 Rendering cosmic video to {output_path}...")
