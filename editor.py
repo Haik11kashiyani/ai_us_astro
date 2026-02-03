@@ -236,6 +236,8 @@ class EditorEngine:
                 mime_type = "image/png"
                 if image_path.lower().endswith(".jpg") or image_path.lower().endswith(".jpeg"):
                     mime_type = "image/jpeg"
+                elif image_path.lower().endswith(".webp"):
+                    mime_type = "image/webp"
                 return f"data:{mime_type};base64,{b64_string}"
         except Exception as e:
             logging.warning(f"Failed to encode image {image_path}: {e}")

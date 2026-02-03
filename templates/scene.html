@@ -208,6 +208,31 @@
             }
         }
 
+        /* Zodiac Symbol Container - CENTERED */
+        #zodiac-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #zodiac-image {
+            width: 580px;
+            height: 580px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            filter: drop-shadow(0 0 60px var(--glow, #9c27b0));
+            z-index: 11;
+            animation: zodiacFloat 6s ease-in-out infinite;
+        }
+
         /* =====================
            CONTENT CARD
            ===================== */
@@ -417,7 +442,6 @@
     <div class="zodiac-ring"></div>
 
     <!-- Shooting Stars -->
-    <div class="shooting-star"></div>
     <div class="shooting-star"></div>
     <div class="shooting-star"></div>
 
