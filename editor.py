@@ -16,17 +16,29 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Western Zodiac Sign to filename mapping
 SIGN_IMAGE_MAP = {
     "aries": "aries",
+    "mesh": "aries",
     "taurus": "taurus",
+    "vrishabh": "taurus",
     "gemini": "gemini",
+    "mithun": "gemini",
     "cancer": "cancer",
+    "kark": "cancer",
     "leo": "leo",
+    "simha": "leo",
     "virgo": "virgo",
+    "kanya": "virgo",
     "libra": "libra",
+    "tula": "libra",
     "scorpio": "scorpio",
+    "vrishchik": "scorpio",
     "sagittarius": "sagittarius",
+    "dhanu": "sagittarius",
     "capricorn": "capricorn",
+    "makar": "capricorn",
     "aquarius": "aquarius",
+    "kumbh": "aquarius",
     "pisces": "pisces",
+    "meen": "pisces",
 }
 
 # Cosmic Western Astrology Color Schemes
