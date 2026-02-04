@@ -1,4 +1,4 @@
-ame: Daily Horoscope - Batch 4 (Capricorn, Aquarius, Pisces)
+name: Daily Horoscope - Batch 4 (Capricorn, Aquarius, Pisces)
 on:
   workflow_dispatch:
   schedule:
