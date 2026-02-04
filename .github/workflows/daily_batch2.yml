@@ -1,4 +1,4 @@
-ame: Daily Horoscope - Batch 2 (Cancer, Leo, Virgo)
+name: Daily Horoscope - Batch 2 (Cancer, Leo, Virgo)
 on:
   workflow_dispatch:
   schedule:
