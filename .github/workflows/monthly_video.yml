@@ -1,4 +1,4 @@
-ame: Monthly Horoscope Production
+name: Monthly Horoscope Production
 on:
   workflow_dispatch:
     inputs:
