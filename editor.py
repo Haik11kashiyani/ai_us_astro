@@ -455,9 +455,8 @@ class EditorEngine:
 
     def create_scene(self, sign_name: str, text: str, duration: float, subtitle_data: list = None, theme_override: str = None, header_text: str = "", period_type: str = "Daily"):
         """Wrapper to run async render synchronously. Uses cosmic animation styles."""
-        import random
-        # Use new cosmic animation styles
-        chosen_style = random.choice(COSMIC_ANIM_STYLES)
+        # Use consistent cosmic animation style as requested
+        chosen_style = "cosmic" # random.choice(COSMIC_ANIM_STYLES)
         
         try:
             frames = asyncio.run(self._render_html_scene(sign_name, text, duration, subtitle_data, theme_override, header_text, period_type, chosen_style))

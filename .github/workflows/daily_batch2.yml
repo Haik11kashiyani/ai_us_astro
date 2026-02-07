@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   schedule:
     # 4:15 AM EST = 9:15 AM UTC (Videos will publish at 6 AM EST)
-    - cron: "15 9 * * *"
+    - cron: "30 11 * * *"
 
 jobs:
   produce-video:

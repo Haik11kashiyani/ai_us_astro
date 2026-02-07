@@ -39,6 +39,67 @@ def produce_video_from_script(agents, sign, title_suffix, script, date_str, them
     narrator, editor, director = agents['narrator'], agents['editor'], agents['director']
     
     print(f"\n🎬 STARTING PRODUCTION: {title_suffix} ({header_text})...")
+
+def process_immediate_upload(uploader, video_path, script_data, sign, date_str, period_type):
+    """
+    Handles immediate upload logic with smart scheduling check.
+    If past 6 AM EST, uploads PUBLIC immediately.
+    If before 6 AM EST, schedules for 6 AM Today.
+    """
+    if not uploader.service:
+         print("❌ Upload skipped: No Auth.")
+         return
+
+    if not os.path.exists(video_path):
+        print(f"❌ Video file not found for upload: {video_path}")
+        return
+
+    # Scheduling Logic (EST)
+    from datetime import timedelta
+    est = pytz.timezone('America/New_York')
+    now_est = datetime.now(est)
+    
+    # Target: 6:00 AM EST Today
+    target_time = now_est.replace(hour=6, minute=0, second=0, microsecond=0)
+    
+    privacy_status = "public"
+    publish_at = None
+    
+    # If it is currently BEFORE 5 AM (Buffer for 6 AM runs), schedule for today 6 AM
+    cutoff_time = now_est.replace(hour=5, minute=0, second=0, microsecond=0)
+    if now_est < cutoff_time:
+        # Add random delay (0-45 mins) for organic feel
+        import random
+        delay_minutes = random.randint(0, 45) 
+        target_time = target_time + timedelta(minutes=delay_minutes)
+        
+        # Convert to UTC for API
+        target_utc = target_time.astimezone(pytz.utc)
+        publish_at = target_utc.replace(tzinfo=None)
+        privacy_status = "private" # Must be private for scheduled
+        print(f"   📅 Early Morning! Scheduled for: {target_time.strftime('%H:%M')} EST (Delay: {delay_minutes}m)")
+    else:
+        # If it is AFTER 6 AM, upload IMMEDIATELY as PUBLIC
+        print(f"   🚀 Past 6 AM EST. Uploading IMMEDIATELY (Public).")
+        privacy_status = "public"
+        publish_at = None
+
+    print(f"\n🚀 Initiating Upload for {period_type}...")
+    try:
+        meta = script_data.get("metadata", {})
+        if not meta or "title" not in meta:
+            print("⚠️ Metadata missing/invalid in script. Generating fallback...")
+            meta = uploader.generate_metadata(sign, date_str, period_type)
+        else:
+            print("✅ Using AI-generated metadata.")
+            
+    except Exception as e:
+        print(f"⚠️ Metadata extraction failed: {e}. Using fallback.")
+        meta = uploader.generate_metadata(sign, date_str, period_type)
+    
+    if "categoryId" not in meta: meta["categoryId"] = "24"
+    
+    uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
     scenes = []
     
     # Debug: Show what script format we received
@@ -308,16 +369,15 @@ def main():
                 header_text=daily_header
             )
             
-            # Add to list for upload
-            sign_clean = target_sign.split()[0]
-            path = f"outputs/{sign_clean}_{suffix}.mp4"
-            generated_content.append({
-                "path": path,
-                "period": "Daily",
-                "date": date_str,
-                "script": daily_script
-            })
+
             
+            # IMMEDIATE UPLOAD
+            if args.upload:
+                sign_clean = target_sign.split()[0]
+                path = f"outputs/{sign_clean}_{suffix}.mp4"
+                process_immediate_upload(agents['uploader'], path, daily_script, target_sign, date_str, "Daily")
+            
+
         except Exception as e:
             print(f"❌ Daily Video Failed: {e}")
             import traceback
@@ -342,13 +402,13 @@ def main():
                     period_type="Yearly", header_text=yearly_header
                 )
                 
-                sign_clean = target_sign.split()[0]
-                generated_content.append({
-                    "path": f"outputs/{sign_clean}_{suffix}.mp4",
-                    "period": "Yearly",
-                    "date": year_str,
-                    "script": yearly_script
-                })
+
+                
+                if args.upload:
+                    sign_clean = target_sign.split()[0]
+                    path = f"outputs/{sign_clean}_{suffix}.mp4"
+                    process_immediate_upload(agents['uploader'], path, yearly_script, target_sign, year_str, "Yearly")
+
                 detailed_produced = True
                 
             except Exception as e:
@@ -367,13 +427,13 @@ def main():
                     period_type="Monthly", header_text=monthly_header
                 )
                 
-                sign_clean = target_sign.split()[0]
-                generated_content.append({
-                    "path": f"outputs/{sign_clean}_{suffix}.mp4",
-                    "period": "Monthly",
-                    "date": month_year,
-                    "script": monthly_script
-                })
+
+                
+                if args.upload:
+                    sign_clean = target_sign.split()[0]
+                    path = f"outputs/{sign_clean}_{suffix}.mp4"
+                    process_immediate_upload(agents['uploader'], path, monthly_script, target_sign, month_year, "Monthly")
+
                 detailed_produced = True
                 
             except Exception as e:
@@ -392,13 +452,13 @@ def main():
                     period_type="Daily_Insight", header_text=insight_header
                 )
                 
-                sign_clean = target_sign.split()[0]
-                generated_content.append({
-                    "path": f"outputs/{sign_clean}_{suffix}.mp4",
-                    "period": "Daily_Insight",
-                    "date": date_str,
-                    "script": insight_script
-                })
+
+                
+                if args.upload:
+                    sign_clean = target_sign.split()[0]
+                    path = f"outputs/{sign_clean}_{suffix}.mp4"
+                    process_immediate_upload(agents['uploader'], path, insight_script, target_sign, date_str, "Daily_Insight")
+
                 
             except Exception as e:
                 print(f"❌ Insight Video Failed: {e}")
@@ -406,71 +466,8 @@ def main():
                 traceback.print_exc()
                 sys.exit(1)
 
-    # --- UPLOAD LOGIC ---
-    if args.upload and generated_content:
-        uploader = agents['uploader']
-        if uploader.service:
-            
-            # Scheduling Logic (EST)
-            from datetime import timedelta
-            est = pytz.timezone('America/New_York')
-            now_est = datetime.now(est)
-            
-            # Target: 6:00 AM EST Today (Sharp)
-            target_time = now_est.replace(hour=6, minute=0, second=0, microsecond=0)
-            
-            # If past 6:00 AM, schedule for TOMORROW
-            if now_est > target_time:
-                target_time = target_time + timedelta(days=1)
-                
-            print(f"   📅 Scheduled Publish Time: {target_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    # Removed old bulk upload loop
 
-            # Convert to UTC for API
-            utc_publish_at = None
-            if target_time:
-                target_utc = target_time.astimezone(pytz.utc)
-                utc_publish_at = target_utc.replace(tzinfo=None)
-
-            upload_success_count = 0
-            upload_failure_count = 0
-            
-            for item in generated_content:
-                path = item["path"]
-                if os.path.exists(path):
-                    print(f"\n🚀 Initiating Upload for {item['period']}...")
-                    try:
-                        script_data = item['script']
-                        meta = script_data.get("metadata", {})
-                        
-                        if not meta or "title" not in meta:
-                            print("⚠️ Metadata missing in script. Using local fallback.")
-                            meta = uploader.generate_metadata(target_sign, item['date'], item['period'])
-                        else:
-                            print("✅ Using AI-generated metadata from script.")
-
-                    except Exception as e:
-                        print(f"⚠️ Metadata extraction failed: {e}. Using fallback.")
-                        meta = uploader.generate_metadata(target_sign, item['date'], item['period'])
-                    
-                    if "categoryId" not in meta: meta["categoryId"] = "24"
-                    
-                    upload_result = uploader.upload_video(path, meta, publish_at=utc_publish_at)
-                    if upload_result:
-                        upload_success_count += 1
-                        print(f"✅ Upload successful for {item['period']}")
-                    else:
-                        upload_failure_count += 1
-                        print(f"❌ Upload FAILED for {item['period']}")
-                else:
-                    print(f"❌ Video file not found: {path}")
-                    upload_failure_count += 1
-            
-            print(f"\n📊 Upload Summary: {upload_success_count} success, {upload_failure_count} failed")
-            if upload_failure_count > 0:
-                raise Exception(f"YouTube upload failed! {upload_failure_count} video(s) failed to upload.")
-        else:
-            print("❌ Upload skipped: No Auth.")
-            raise Exception("YouTube authentication failed - cannot upload video.")
     
     if args.upload and not generated_content:
          print("❌ No content was generated for upload.")

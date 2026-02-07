@@ -62,6 +62,23 @@ class AstrologerAgent:
         "libra": "Venus", "scorpio": "Pluto/Mars", "sagittarius": "Jupiter",
         "capricorn": "Saturn", "aquarius": "Uranus/Saturn", "pisces": "Neptune/Jupiter"
     }
+
+    # Standard "How to Find Your Sign" Guide (Western Astrology)
+    FIND_SIGN_GUIDE = """
+🌟 HOW TO FIND YOUR ZODIAC SIGN (Western Astrology):
+📅 Aries: Mar 21 - Apr 19
+📅 Taurus: Apr 20 - May 20
+📅 Gemini: May 21 - Jun 20
+📅 Cancer: Jun 21 - Jul 22
+📅 Leo: Jul 23 - Aug 22
+📅 Virgo: Aug 23 - Sep 22
+📅 Libra: Sep 23 - Oct 22
+📅 Scorpio: Oct 23 - Nov 21
+📅 Sagittarius: Nov 22 - Dec 21
+📅 Capricorn: Dec 22 - Jan 19
+📅 Aquarius: Jan 20 - Feb 18
+📅 Pisces: Feb 19 - Mar 20
+"""
     
     def __init__(self, api_key: str = None, backup_key: str = None):
         """Initialize with OpenRouter API Keys (primary + backup) + Google AI fallback."""
@@ -328,21 +345,20 @@ Discover what the stars have in store for you today!
         ruler = self.RULING_PLANETS.get(sign_key, "Unknown")
         
         system_prompt = """
-        You are 'Stella Nova', a Mystical Guide and Astrologer.
+        You are 'Stella', a wise and empathetic friend who knows astrology deeply.
         
-        Your task: Reveal the cosmic truth for today.
+        Your task: Talk to the user about their day as if you are sitting right next to them.
         
-        STYLE & TONE:
-        1. **MYSTICAL & STORYTELLING**: Do not sound like a news report. Sound like a movie trailer for the user's life.
-        2. **DIRECT & PERSONAL**: Use "You". Speak directly to their soul. "You will feel a shift...", "The stars are demanding..."
-        3. **SHORT & PUNCHY**: Use short sentences. High impact. No fluff.
-        4. **NO SUGARCOATING**: If the energy is heavy, warn them. If it's explosive, celebrate it.
-        5. **DEEP ASTROLOGY**: Mention the SPECIFIC transits (Square, Trine, Retrograde) as the *reason* for the feeling.
-        6. **REMEDIES**: Always give a quick, actionable magical remedy.
+        TONE & STYLE:
+        1. **HUMAN & CONVERSATIONAL**: Do not sound like a robot or a news anchor. Sound like a best friend giving advice.
+        2. **EMPATHETIC**: Use phrases like "I know it feels heavy...", "You might be wondering...", "Here is the good news..."
+        3. **DIRECT "YOU"**: Speak directly to the person. Connect deeply.
+        4. **NO ASTRO-JARGON OVERLOAD**: Explain the transit like you are talking to a normal person. "Mars is making you feisty" instead of "Mars square Pluto causes aggression".
+        5. **REAL TALK**: Be honest. If it's a hard day, say "Look, today might be tough, but here is how you handle it."
         
         FORMATTING:
-        - Add EMOTION TAGS: (Serious), (Whispering), (Excited), (Warm).
-        - Write in clear, dramatic ENGLISH.
+        - Add EMOTION TAGS at the start of sections if helpful: (Warmly), (Honestly), (Excited).
+        - Use simple, punchy English.
         """,
         
         user_prompt = f"""
@@ -377,7 +393,15 @@ Discover what the stars have in store for you today!
             }}
         }}
         """
-        return self._generate_script(sign, date, "Daily", system_prompt, user_prompt)
+        result = self._generate_script(sign, date, "Daily", system_prompt, user_prompt)
+        
+        # Enhance Description with Guide if missing
+        if "metadata" in result and "description" in result["metadata"]:
+            desc = result["metadata"]["description"]
+            if "HOW TO FIND YOUR ZODIAC SIGN" not in desc:
+                 result["metadata"]["description"] = desc + "\n" + self.FIND_SIGN_GUIDE
+                 
+        return result
 
     def generate_monthly_forecast(self, sign: str, month_year: str) -> dict:
         """Generates Monthly Horoscope with detailed Western Astrology analysis."""
@@ -432,7 +456,15 @@ Discover what the stars have in store for you today!
             }}
         }}
         """
-        return self._generate_script(sign, month_year, "Monthly", system_prompt, user_prompt)
+        result = self._generate_script(sign, month_year, "Monthly", system_prompt, user_prompt)
+
+        # Enhance Description with Guide if missing
+        if "metadata" in result and "description" in result["metadata"]:
+            desc = result["metadata"]["description"]
+            if "HOW TO FIND YOUR ZODIAC SIGN" not in desc:
+                 result["metadata"]["description"] = desc + "\n" + self.FIND_SIGN_GUIDE
+
+        return result
 
     def generate_yearly_forecast(self, sign: str, year: str) -> dict:
         """Generates comprehensive Yearly Horoscope."""
@@ -487,7 +519,15 @@ Discover what the stars have in store for you today!
             }}
         }}
         """
-        return self._generate_script(sign, year, "Yearly", system_prompt, user_prompt)
+        result = self._generate_script(sign, year, "Yearly", system_prompt, user_prompt)
+
+        # Enhance Description with Guide if missing
+        if "metadata" in result and "description" in result["metadata"]:
+            desc = result["metadata"]["description"]
+            if "HOW TO FIND YOUR ZODIAC SIGN" not in desc:
+                 result["metadata"]["description"] = desc + "\n" + self.FIND_SIGN_GUIDE
+
+        return result
 
     def generate_daily_insight_script(self, sign: str, date: str) -> dict:
         """Generates a detailed Daily Insight deep-dive (Evening Content)."""
@@ -535,7 +575,15 @@ Discover what the stars have in store for you today!
             }}
         }}
         """
-        return self._generate_script(sign, date, "Daily_Insight", system_prompt, user_prompt)
+        result = self._generate_script(sign, date, "Daily_Insight", system_prompt, user_prompt)
+
+        # Enhance Description with Guide if missing
+        if "metadata" in result and "description" in result["metadata"]:
+            desc = result["metadata"]["description"]
+            if "HOW TO FIND YOUR ZODIAC SIGN" not in desc:
+                 result["metadata"]["description"] = desc + "\n" + self.FIND_SIGN_GUIDE
+                 
+        return result
 
     def generate_viral_metadata(self, sign: str, date_str: str, period_type: str, script_data) -> dict:
         """
@@ -556,6 +604,23 @@ Discover what the stars have in store for you today!
         else:
             context = "Daily horoscope prediction"
         
+        # Standard "How to Find Your Sign" Guide (Western Astrology)
+        find_sign_guide = """
+        🌟 HOW TO FIND YOUR ZODIAC SIGN (Western Astrology):
+        📅 Aries: Mar 21 - Apr 19
+        📅 Taurus: Apr 20 - May 20
+        📅 Gemini: May 21 - Jun 20
+        📅 Cancer: Jun 21 - Jul 22
+        📅 Leo: Jul 23 - Aug 22
+        📅 Virgo: Aug 23 - Sep 22
+        📅 Libra: Sep 23 - Oct 22
+        📅 Scorpio: Oct 23 - Nov 21
+        📅 Sagittarius: Nov 22 - Dec 21
+        📅 Capricorn: Dec 22 - Jan 19
+        📅 Aquarius: Jan 20 - Feb 18
+        📅 Pisces: Feb 19 - Mar 20
+        """
+
         system_prompt = """
         You are a YouTube Growth Expert specializing in astrology content.
         
@@ -574,7 +639,16 @@ Discover what the stars have in store for you today!
         TAG RULES:
         1. Include sign name + horoscope
         2. Include: shorts, viral, zodiac, astrology
-        3. Include trending astrology terms
+        3. Include trending astrology terms (e.g., "mercury retrograde", "manifestation", "spirituality")
+        4. Focus on high-volume search terms worldwide
+        
+        CRITICAL DESCRIPTION RULES (MAXIMIZE SIZE):
+        - The user wants the description to be LONG (aim for 2000-4000 chars).
+        - Include a "Deep Dive" section expanding on the hook.
+        - Include a "Why Astrology Works" mini-essay.
+        - Include "General Traits of {sign}" to fill space and add value.
+        - Include a long list of relevant keywords at the bottom (natural sentence form).
+        - DO NOT be brief. Be verbose and valuable.
         """
         
         user_prompt = f"""
@@ -586,8 +660,8 @@ Discover what the stars have in store for you today!
         Return ONLY valid JSON:
         {{
             "title": "Catchy title under 80 chars ending with ⭐ #shorts #viral",
-            "description": "Engaging description with hashtags",
-            "tags": ["list", "of", "25+", "relevant", "tags"]
+            "description": "EXTREMELY DETAILED description. Include: Hook, Deep Dive (300 words), {sign} Traits (200 words), Spiritual Meaning, and 30+ Hashtags. MUST be > 2000 characters.",
+            "tags": ["list", "of", "40+", "relevant", "tags"]
         }}
         """
         
@@ -602,7 +676,7 @@ Discover what the stars have in store for you today!
         if not isinstance(result, dict) or 'title' not in result:
             raise Exception("Invalid metadata generated.")
         
-        # Ensure hashtags are present
+        # Ensure hashtags are present and Append Guide
         title = result.get('title', '')
         if '#shorts' not in title.lower():
             if len(title) > 80:
@@ -610,10 +684,16 @@ Discover what the stars have in store for you today!
             title = title.rstrip() + " #shorts #viral"
         elif '#viral' not in title.lower():
             title = title.rstrip() + " #viral"
+        
+        description = result.get('description', '')
+        # Append the guide if not present
+        if "HOW TO FIND YOUR ZODIAC SIGN" not in description:
+            result['description'] = description + "\n" + find_sign_guide
+            
         result['title'] = title
         
         if 'categoryId' not in result:
-            result['categoryId'] = '24'
+            result['categoryId'] = '24' 
             
         return result
 

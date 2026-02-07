@@ -130,13 +130,24 @@ class YouTubeUploader:
             title = title.rstrip() + " #shorts"
 
         # --- VIRAL DESCRIPTION STRATEGY ---
+        # "How to find check" is already here, but let's make it more robust and add more "filler" viral text to use space.
+        
         desc = f"""🔮 {clean_sign} {period_type} Horoscope - {date_str}
 
 {trigger}
 
-The cosmos has a powerful message for {clean_sign} today! Watch till the end to discover what the stars have in store for you! ⭐
+The cosmos has a powerful message for {clean_sign} today! 🌌
+Are you ready to embrace your destiny? This reading reveals the hidden energies influencing your life right now. 
+Watch till the end to discover what the stars have in store for you! ⭐
 
-📅 **FIND YOUR SIGN (Tropical/Western):**
+👇 **TIME STAMPS & HIGHLIGHTS** 👇
+0:00 - {hook}
+0:15 - Love & Relationships 💖
+0:30 - Career & Money 💰
+0:45 - Health & Wellness 🌿
+0:55 - Lucky Numbers & Colors 🍀
+
+📅 **HOW TO FIND YOUR ZODIAC SIGN (Western / Tropical):**
 ♈ Aries: Mar 21 - Apr 19
 ♉ Taurus: Apr 20 - May 20
 ♊ Gemini: May 21 - Jun 20
@@ -150,23 +161,25 @@ The cosmos has a powerful message for {clean_sign} today! Watch till the end to 
 ♒ Aquarius: Jan 20 - Feb 18
 ♓ Pisces: Feb 19 - Mar 20
 
-🌟 WHAT'S COVERED:
-• 💕 Love & Relationships
-• 💼 Career & Success  
-• 💰 Money & Abundance
-• 🧘 Health & Energy
-• 🍀 Lucky Color & Number
+🌟 **WHY WATCH DAILY?**
+Astrology helps you align with the cosmic flow. By understanding the daily energies, you can make better decisions, improve your relationships, and manifest your desires with greater ease.
+This channel is dedicated to bringing you the most accurate, uplifting, and clear western astrology forecasts.
 
-👆 LIKE if you're a {clean_sign}!
-💬 COMMENT your sign below!
-🔔 SUBSCRIBE for daily cosmic guidance!
+✨ **MANIFESTATION AFFIRMATION FOR {clean_sign.upper()}:**
+"I am aligned with the universe. I attract abundance, love, and joy into my life effortlessly. My path is clear."
 
-━━━━━━━━━━━━━━━━━━━━━━━
-
-#shorts #viral #{sign_lower} #{sign_lower}horoscope #horoscope #astrology #zodiac #zodiacsigns #horoscopetoday #dailyhoroscope #{sign_lower}{dynamic_year} #tarot #starsigns #universe #manifestation #spirituality #cosmicenergy #psychic #fortune #destiny #fyp #foryou #trending #explore #viralshorts
+👆 LIKE if this resonates!
+💬 COMMENT "{clean_sign}" to claim this energy!
+🔔 SUBSCRIBE for your daily cosmic guidance!
 
 ━━━━━━━━━━━━━━━━━━━━━━━
-        """.strip()
+** FOLLOW THE STARS **
+Don't miss out on important planetary shifts!
+Mercury Retrograde updates, Full Moon rituals, and New Moon intentions.
+
+#shorts #viral #{sign_lower} #{sign_lower}horoscope #horoscope #astrology #zodiac #zodiacsigns #horoscopetoday #dailyhoroscope #{sign_lower}{dynamic_year} #tarot #starsigns #universe #manifestation #spirituality #cosmicenergy #psychic #fortune #destiny #fyp #foryou #trending #explore #viralshorts #lawofattraction #witchesofyoutube #astrologylovers #zodiacfacts
+━━━━━━━━━━━━━━━━━━━━━━━
+""".strip()
 
         # --- MEGA TAGS STRATEGY ---
         tags = [
