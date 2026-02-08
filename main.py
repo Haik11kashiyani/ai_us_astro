@@ -31,15 +31,6 @@ SIGN_INDEX_MAP = {
 }
 
 
-def produce_video_from_script(agents, sign, title_suffix, script, date_str, theme_override=None, period_type="Daily", header_text=""):
-    """
-    Orchestrates the production of a single video from a script.
-    Uses gradient sign-themed backgrounds with karaoke text.
-    """
-    narrator, editor, director = agents['narrator'], agents['editor'], agents['director']
-    
-    print(f"\n🎬 STARTING PRODUCTION: {title_suffix} ({header_text})...")
-
 def process_immediate_upload(uploader, video_path, script_data, sign, date_str, period_type):
     """
     Handles immediate upload logic with smart scheduling check.
@@ -100,6 +91,18 @@ def process_immediate_upload(uploader, video_path, script_data, sign, date_str, 
     if "categoryId" not in meta: meta["categoryId"] = "24"
     
     uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
+
+
+def produce_video_from_script(agents, sign, title_suffix, script, date_str, theme_override=None, period_type="Daily", header_text=""):
+    """
+    Orchestrates the production of a single video from a script.
+    Uses gradient sign-themed backgrounds with karaoke text.
+    """
+    narrator, editor, director = agents['narrator'], agents['editor'], agents['director']
+    
+    print(f"\n🎬 STARTING PRODUCTION: {title_suffix} ({header_text})...")
+
+
     scenes = []
     
     # Debug: Show what script format we received
