@@ -44,7 +44,7 @@ class DirectorAgent:
         self.google_ai_key = os.getenv("GOOGLE_AI_API_KEY") or "AIzaSyDw8nEeFSWIajWJIL43u8Dt7UT5jJS_FuA"
         if self.google_ai_key and GOOGLE_AI_AVAILABLE:
             genai.configure(api_key=self.google_ai_key)
-            self.google_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            self.google_model = genai.GenerativeModel('gemini-2.0-flash')
         else:
             self.google_model = None
         

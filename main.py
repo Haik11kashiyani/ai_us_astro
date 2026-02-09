@@ -338,7 +338,6 @@ def main():
     print(f"   Type: {args.type.upper()}")
     print("="*60 + "\n")
     
-    generated_content = []
     
     # ==========================
     # MODE 1: SHORTS (MORNING)
@@ -471,10 +470,6 @@ def main():
 
     # Removed old bulk upload loop
 
-    
-    if args.upload and not generated_content:
-         print("❌ No content was generated for upload.")
-         sys.exit(1)
 
 if __name__ == "__main__":
     main()
