@@ -31,12 +31,15 @@ SIGN_INDEX_MAP = {
 }
 
 
-def process_immediate_upload(uploader, video_path, script_data, sign, date_str, period_type):
+def process_immediate_upload(agents, video_path, script_data, sign, date_str, period_type):
     """
     Handles immediate upload logic with smart scheduling check.
     If past 6 AM EST, uploads PUBLIC immediately.
     If before 6 AM EST, schedules for 6 AM Today.
     """
+    uploader = agents['uploader']
+    astrologer = agents['astrologer']
+    
     if not uploader.service:
          print("❌ Upload skipped: No Auth.")
          return
@@ -77,19 +80,18 @@ def process_immediate_upload(uploader, video_path, script_data, sign, date_str, 
 
     print(f"\n🚀 Initiating Upload for {period_type}...")
     try:
-        meta = script_data.get("metadata", {})
+        # ALWAYS try to generate Mega Viral Metadata (300+ keywords) via Astrologer
+        print("🚀 Generating MEGA Viral Metadata (300+ keywords)...")
+        meta = astrologer.generate_viral_metadata(sign, date_str, period_type, script_data)
+        
         if not meta or "title" not in meta:
-            print("⚠️ Metadata missing/invalid in script. Using MEGA viral fallback...")
+            print("⚠️ Advanced metadata generation failed. Falling back to simple...")
             meta = uploader.generate_metadata(sign, date_str, period_type)
         else:
-            print("✅ Using AI-generated metadata.")
-            # Force-inject viral tags even for AI-generated metadata
-            if "tags" not in meta or not meta["tags"]:
-                fallback = uploader.generate_metadata(sign, date_str, period_type)
-                meta["tags"] = fallback["tags"]
+            print("✅ MEGA Metadata Generated Successfully!")
             
     except Exception as e:
-        print(f"⚠️ Metadata extraction failed: {e}. Using MEGA viral fallback.")
+        print(f"⚠️ Metadata extraction failed: {e}. Using fallback.")
         meta = uploader.generate_metadata(sign, date_str, period_type)
     
     if "categoryId" not in meta: meta["categoryId"] = "24"
@@ -385,7 +387,7 @@ def main():
             if args.upload:
                 sign_clean = target_sign.split()[0]
                 path = f"outputs/{sign_clean}_{suffix}.mp4"
-                process_immediate_upload(agents['uploader'], path, daily_script, target_sign, date_str, "Daily")
+                process_immediate_upload(agents, path, daily_script, target_sign, date_str, "Daily")
             
 
         except Exception as e:
@@ -418,7 +420,7 @@ def main():
                 if args.upload:
                     sign_clean = target_sign.split()[0]
                     path = f"outputs/{sign_clean}_{suffix}.mp4"
-                    process_immediate_upload(agents['uploader'], path, yearly_script, target_sign, year_str, "Yearly")
+                    process_immediate_upload(agents, path, yearly_script, target_sign, year_str, "Yearly")
 
                 detailed_produced = True
                 
@@ -443,7 +445,7 @@ def main():
                 if args.upload:
                     sign_clean = target_sign.split()[0]
                     path = f"outputs/{sign_clean}_{suffix}.mp4"
-                    process_immediate_upload(agents['uploader'], path, monthly_script, target_sign, month_year, "Monthly")
+                    process_immediate_upload(agents, path, monthly_script, target_sign, month_year, "Monthly")
 
                 detailed_produced = True
                 
@@ -468,7 +470,7 @@ def main():
                 if args.upload:
                     sign_clean = target_sign.split()[0]
                     path = f"outputs/{sign_clean}_{suffix}.mp4"
-                    process_immediate_upload(agents['uploader'], path, insight_script, target_sign, date_str, "Daily_Insight")
+                    process_immediate_upload(agents, path, insight_script, target_sign, date_str, "Daily_Insight")
 
                 
             except Exception as e:
