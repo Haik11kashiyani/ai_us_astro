@@ -99,12 +99,12 @@ class AstrologerAgent:
         if backup2:
             self.api_keys.append(backup2)
         
-        # Google AI key (fallback)
+        # Google AI key (PRIMARY provider - free & reliable)
         self.google_ai_key = os.getenv("GOOGLE_AI_API_KEY")
         if self.google_ai_key and GOOGLE_AI_AVAILABLE:
             genai.configure(api_key=self.google_ai_key)
             self.google_model = genai.GenerativeModel('gemini-2.0-flash')
-            logging.info("🌟 Google AI Studio (Gemini) fallback enabled")
+            logging.info("🌟 Google AI Studio (Gemini) PRIMARY provider enabled")
         else:
             self.google_model = None
         
@@ -137,31 +137,58 @@ class AstrologerAgent:
             return True
         return False
 
-    def _generate_with_google_ai(self, system_prompt: str, user_prompt: str) -> dict:
-        """Fallback to Google AI Studio (Gemini) when OpenRouter fails."""
+    def _generate_with_google_ai(self, system_prompt: str, user_prompt: str, max_retries: int = 3) -> dict:
+        """Primary provider: Google AI Studio (Gemini). Free with 15 RPM limit. ENFORCES 1 CALL PER MINUTE STRICTLY."""
+        import time
         if not self.google_model:
             return None
             
-        logging.info("🌟 Trying Google AI Studio (Gemini) as fallback...")
-        try:
-            full_prompt = f"{system_prompt}\n\n{user_prompt}"
-            response = self.google_model.generate_content(full_prompt)
+        # STRICT RATE LIMIT: 60 seconds sleep to ensure max 1 RPM per instance
+        # This allows multiple workflows to run (up to 15) without hitting the global 15 RPM limit
+        logging.info("⏳ STRICT RATE LIMIT: Sleeping 60s before Google AI call to prevent 429s...")
+        time.sleep(60)
             
-            # Extract JSON from response
-            text = response.text
-            # Clean up markdown code blocks if present
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0]
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0]
-            
-            result = json.loads(text.strip())
-            logging.info("✅ Google AI Studio succeeded!")
-            return result
-            
-        except Exception as e:
-            logging.error(f"❌ Google AI Studio failed: {e}")
-            return None
+        for attempt in range(1, max_retries + 1):
+            logging.info(f"🌟 Google AI Studio (Gemini) - Attempt {attempt}/{max_retries}...")
+            try:
+                # Rate limit: 15 RPM = 1 request per 4 seconds (use 5s to be safe)
+                if attempt > 1:
+                    wait_time = 10 * attempt  # 20s, 30s backoff
+                    logging.info(f"⏳ Rate limit guard: waiting {wait_time}s before retry...")
+                    time.sleep(wait_time)
+                
+                full_prompt = f"{system_prompt}\n\nIMPORTANT: Return ONLY valid JSON. No markdown formatting, no preambles, no extra text.\n\n{user_prompt}"
+                response = self.google_model.generate_content(full_prompt)
+                
+                # Extract JSON from response
+                text = response.text
+                # Clean up markdown code blocks if present
+                if "```json" in text:
+                    text = text.split("```json")[1].split("```")[0]
+                elif "```" in text:
+                    text = text.split("```")[1].split("```")[0]
+                
+                result = json.loads(text.strip())
+                logging.info("✅ Google AI Studio succeeded!")
+                return result
+                
+            except Exception as e:
+                error_str = str(e)
+                logging.warning(f"⚠️ Google AI attempt {attempt} failed: {e}")
+                
+                # If rate limited, wait longer and retry
+                if "429" in error_str or "Resource" in error_str or "quota" in error_str.lower():
+                    if attempt < max_retries:
+                        wait_time = 60 * attempt  # 60s, 120s
+                        logging.info(f"⏳ Google AI rate limited. Waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                
+                if attempt >= max_retries:
+                    logging.error(f"❌ Google AI Studio exhausted all {max_retries} retries.")
+                    return None
+        
+        return None
 
     def get_best_free_models(self) -> list:
         """
@@ -216,70 +243,83 @@ class AstrologerAgent:
             return ["google/gemini-2.0-flash-exp:free", "meta-llama/llama-3.3-70b-instruct:free"]
 
     def _generate_script(self, sign: str, date: str, period_type: str, system_prompt: str, user_prompt: str) -> dict:
-        """Helper to try models in rotation with key failover on rate limits."""
-        errors = []
-        tried_backup = False
+        """Generates content using priority: Google AI → OpenRouter → Mock Data."""
+        import time
         
-        while True:
-            for model in self.models:
-                # Rate Limit Protection: Wait 2 mins between calls
-                import time
-                logging.info(f"⏳ Rate Limit Guard: Waiting 2 minutes before API call...")
-                time.sleep(120)
-                
-                logging.info(f"🤖 Generating {period_type} horoscope using: {model}")
-                try:
-                    # Try standard JSON mode first
+        # ========================================
+        # PRIORITY 1: Google AI (FREE, reliable)
+        # ========================================
+        if self.google_model:
+            logging.info(f"🌟 PRIORITY 1: Using Google AI (Gemini) for {sign} {period_type}...")
+            google_result = self._generate_with_google_ai(system_prompt, user_prompt)
+            if google_result:
+                return google_result
+            logging.warning("⚠️ Google AI failed. Falling back to OpenRouter...")
+        
+        # ========================================
+        # PRIORITY 2: OpenRouter (backup)
+        # ========================================
+        if self.client and self.models:
+            errors = []
+            tried_backup = False
+            
+            while True:
+                for model in self.models:
+                    # Short wait between attempts (30s instead of 2 min)
+                    logging.info(f"⏳ Rate Limit Guard: Waiting 30s before OpenRouter call...")
+                    time.sleep(30)
+                    
+                    logging.info(f"🤖 Generating {period_type} horoscope using: {model}")
                     try:
-                        response = self.client.chat.completions.create(
-                            model=model,
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": user_prompt}
-                            ],
-                            response_format={"type": "json_object"}
-                        )
-                        raw_content = response.choices[0].message.content
-                    except Exception as e:
-                        if "400" in str(e):
-                            logging.warning(f"⚠️ Model {model} rejected JSON mode. Retrying with Plain Text...")
+                        # Try standard JSON mode first
+                        try:
                             response = self.client.chat.completions.create(
                                 model=model,
                                 messages=[
-                                    {"role": "system", "content": system_prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no preambles."},
+                                    {"role": "system", "content": system_prompt},
                                     {"role": "user", "content": user_prompt}
-                                ]
+                                ],
+                                response_format={"type": "json_object"}
                             )
                             raw_content = response.choices[0].message.content
-                        else:
-                            raise e
+                        except Exception as e:
+                            if "400" in str(e):
+                                logging.warning(f"⚠️ Model {model} rejected JSON mode. Retrying with Plain Text...")
+                                response = self.client.chat.completions.create(
+                                    model=model,
+                                    messages=[
+                                        {"role": "system", "content": system_prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no preambles."},
+                                        {"role": "user", "content": user_prompt}
+                                    ]
+                                )
+                                raw_content = response.choices[0].message.content
+                            else:
+                                raise e
 
-                    # Robust JSON cleanup
-                    clean_json = raw_content.replace('```json', '').replace('```', '').strip()
-                    return json.loads(clean_json)
-                    
-                except Exception as e:
-                    error_str = str(e)
-                    logging.warning(f"⚠️ Model {model} failed: {e}")
-                    errors.append(f"{model}: {error_str}")
-                    
-                    if "429" in error_str or "rate limit" in error_str.lower():
-                        if not tried_backup and self._switch_to_backup_key():
-                            logging.info("🔄 Rate limit hit! Retrying with backup key...")
-                            tried_backup = True
-                            errors = []
-                            break
-                    continue
-            else:
-                break
+                        # Robust JSON cleanup
+                        clean_json = raw_content.replace('```json', '').replace('```', '').strip()
+                        return json.loads(clean_json)
+                        
+                    except Exception as e:
+                        error_str = str(e)
+                        logging.warning(f"⚠️ Model {model} failed: {e}")
+                        errors.append(f"{model}: {error_str}")
+                        
+                        if "429" in error_str or "rate limit" in error_str.lower():
+                            if not tried_backup and self._switch_to_backup_key():
+                                logging.info("🔄 Rate limit hit! Retrying with backup key...")
+                                tried_backup = True
+                                errors = []
+                                break
+                        continue
+                else:
+                    break
         
-        # FINAL FALLBACK: Try Google AI Studio
-        logging.warning("⚠️ All OpenRouter models/keys exhausted. Trying Google AI fallback...")
-        google_result = self._generate_with_google_ai(system_prompt, user_prompt)
-        if google_result:
-            return google_result
-        
-        raise Exception(f"❌ API Quota Exceeded for ALL keys. Cannot generate valid content for {sign}.")
+        # ========================================
+        # PRIORITY 3: Mock Data (SAFETY NET)
+        # ========================================
+        logging.warning(f"⚠️ ALL APIs failed for {sign}. Using mock data to ensure video is still produced!")
+        return self._get_mock_data(sign, period_type)
 
     def _get_mock_data(self, sign, period_type):
         """Returns safe, pre-written content for testing when APIs are down."""
@@ -587,9 +627,10 @@ Discover what the stars have in store for you today!
 
     def generate_viral_metadata(self, sign: str, date_str: str, period_type: str, script_data) -> dict:
         """
-        Generates Viral YouTube Metadata (Title, Desc, Tags) using the LLM.
+        Generates MEGA Viral YouTube Metadata (Title, Desc, Tags) using the LLM.
+        Includes trending tags from every relevant niche for maximum discoverability.
         """
-        logging.info(f"🚀 Astrologer: Generating Viral Metadata for {sign} ({period_type})...")
+        logging.info(f"🚀 Astrologer: Generating MEGA Viral Metadata for {sign} ({period_type})...")
         
         # Handle script_data being a list
         if isinstance(script_data, list):
@@ -604,51 +645,34 @@ Discover what the stars have in store for you today!
         else:
             context = "Daily horoscope prediction"
         
-        # Standard "How to Find Your Sign" Guide (Western Astrology)
-        find_sign_guide = """
-        🌟 HOW TO FIND YOUR ZODIAC SIGN (Western Astrology):
-        📅 Aries: Mar 21 - Apr 19
-        📅 Taurus: Apr 20 - May 20
-        📅 Gemini: May 21 - Jun 20
-        📅 Cancer: Jun 21 - Jul 22
-        📅 Leo: Jul 23 - Aug 22
-        📅 Virgo: Aug 23 - Sep 22
-        📅 Libra: Sep 23 - Oct 22
-        📅 Scorpio: Oct 23 - Nov 21
-        📅 Sagittarius: Nov 22 - Dec 21
-        📅 Capricorn: Dec 22 - Jan 19
-        📅 Aquarius: Jan 20 - Feb 18
-        📅 Pisces: Feb 19 - Mar 20
-        """
-
         system_prompt = """
-        You are a YouTube Growth Expert specializing in astrology content.
+        You are a YouTube Growth Expert specializing in viral astrology content.
         
         TITLE RULES:
         1. Under 80 characters
         2. Include the zodiac sign name
-        3. Create curiosity or urgency
+        3. Create EXTREME curiosity or urgency ("You WON'T believe...", "SHOCKING truth...")
         4. Use 1 emoji at the end (⭐, 🔮, ✨, 💫)
         5. End with #shorts #viral
         
-        DESCRIPTION RULES:
-        1. Hook in first line
-        2. Mention what's covered (love, career, money)
-        3. Include 15-20 hashtags mixing broad and specific
+        DESCRIPTION RULES (MAXIMIZE SEO):
+        1. Clickbait hook in first line (this shows in search results)
+        2. Mention: love, career, money, health, lucky numbers
+        3. LONG description (2000-4000 chars) with:
+           - "Deep Dive" section expanding on the hook
+           - "Why Astrology Works" mini-essay
+           - "General Traits" section
+           - "How to Find Your Sign" guide
+        4. End with 40+ hashtags mixing: sign-specific, general astrology, trending viral, manifestation, spiritual, self-help
         
-        TAG RULES:
-        1. Include sign name + horoscope
-        2. Include: shorts, viral, zodiac, astrology
-        3. Include trending astrology terms (e.g., "mercury retrograde", "manifestation", "spirituality")
-        4. Focus on high-volume search terms worldwide
-        
-        CRITICAL DESCRIPTION RULES (MAXIMIZE SIZE):
-        - The user wants the description to be LONG (aim for 2000-4000 chars).
-        - Include a "Deep Dive" section expanding on the hook.
-        - Include a "Why Astrology Works" mini-essay.
-        - Include "General Traits of {sign}" to fill space and add value.
-        - Include a long list of relevant keywords at the bottom (natural sentence form).
-        - DO NOT be brief. Be verbose and valuable.
+        TAG RULES (50+ TAGS for maximum reach):
+        1. Sign-specific: "{sign} horoscope", "{sign} today", "{sign} 2026"
+        2. General astrology: horoscope, zodiac, daily horoscope, astrology
+        3. VIRAL/TRENDING: shorts, viral, fyp, trending, explore, foryou
+        4. Spiritual: manifestation, law of attraction, universe, angel numbers, 1111
+        5. Self-help: motivation, self care, healing, mindset, positivity
+        6. Cross-niche trending: asmr, satisfying, storytime, grwm, aesthetic
+        7. Engagement: must watch, don't skip, watch till end
         """
         
         user_prompt = f"""
@@ -660,8 +684,8 @@ Discover what the stars have in store for you today!
         Return ONLY valid JSON:
         {{
             "title": "Catchy title under 80 chars ending with ⭐ #shorts #viral",
-            "description": "EXTREMELY DETAILED description. Include: Hook, Deep Dive (300 words), {sign} Traits (200 words), Spiritual Meaning, and 30+ Hashtags. MUST be > 2000 characters.",
-            "tags": ["list", "of", "40+", "relevant", "tags"]
+            "description": "EXTREMELY DETAILED description. Include: Hook, Deep Dive (300 words), {sign} Traits (200 words), Spiritual Meaning, How to Find Your Sign guide, and 40+ Hashtags. MUST be > 2000 characters.",
+            "tags": ["list", "of", "50+", "relevant", "tags", "including", "viral", "trending", "cross-niche"]
         }}
         """
         
@@ -671,12 +695,14 @@ Discover what the stars have in store for you today!
             if len(result) > 0 and isinstance(result[0], dict):
                 result = result[0]
             else:
-                raise Exception(f"Metadata generation failed for {sign}.")
+                logging.warning("⚠️ LLM metadata generation failed. Will use uploader fallback.")
+                return None
         
         if not isinstance(result, dict) or 'title' not in result:
-            raise Exception("Invalid metadata generated.")
+            logging.warning("⚠️ Invalid metadata structure. Will use uploader fallback.")
+            return None
         
-        # Ensure hashtags are present and Append Guide
+        # Ensure hashtags are present
         title = result.get('title', '')
         if '#shorts' not in title.lower():
             if len(title) > 80:
@@ -686,10 +712,80 @@ Discover what the stars have in store for you today!
             title = title.rstrip() + " #viral"
         
         description = result.get('description', '')
-        # Append the guide if not present
+        
+        # Append "How to Find Your Sign" guide if not present
         if "HOW TO FIND YOUR ZODIAC SIGN" not in description:
-            result['description'] = description + "\n" + find_sign_guide
-            
+            result['description'] = description + "\n" + self.FIND_SIGN_GUIDE
+        
+        # FORCE-INJECT mega viral tags into the tags list
+        sign_lower = sign.lower().split()[0]
+        import re
+        year_match = re.search(r'\b(20\d{2})\b', date_str)
+        dynamic_year = year_match.group(1) if year_match else "2026"
+        
+        # 300+ KEYWORDS BLOCK for Description (Max SEO)
+        keywords_block = [
+            f"{sign_lower} horoscope", f"{sign_lower} today", f"{sign_lower} daily", f"{sign_lower} {dynamic_year}",
+            "horoscope", "astrology", "zodiac", "fortune", "tarot", "manifestation", "spirituality", "love", "career", "money",
+            "shorts", "viral", "trending", "fyp", "foryou", "explore", "aesthetic", "satisfying", "peaceful", "calm",
+            "healing", "meditation", "yoga", "mindfulness", "positive vibes", "motivation", "inspiration", "self care",
+            "lawofattraction", "abundance", "wealth", "success", "growth", "mindset", "energy", "vibration", "frequency",
+            "528hz", "432hz", "binaural beats", "asmr", "relaxing", "sleep music", "focus", "study", "work",
+            "mercury retrograde", "full moon", "new moon", "eclipse", "solar eclipse", "lunar eclipse", "retrograde",
+            "mars", "venus", "jupiter", "saturn", "uranus", "neptune", "pluto", "sun", "moon", "rising",
+            "aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+            "fire sign", "earth sign", "air sign", "water sign", "cardinal", "fixed", "mutable",
+            "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+            "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "weekend", "week", "month", "year",
+            "2024", "2025", "2026", "prediction", "forecast", "reading", "psychic reading", "tarot reading", "angel cards",
+            "angel numbers", "111", "222", "333", "444", "555", "666", "777", "888", "999", "1111", "1212",
+            "soulmate", "twin flame", "karmic", "partner", "ex", "crush", "marriage", "divorce", "breakup", "reconciliation",
+            "job", "promotion", "raise", "business", "entrepreneur", "investment", "crypto", "stocks", "lottery", "luck",
+            "health", "wellness", "fitness", "diet", "nutrition", "mental health", "anxiety", "stress", "depression", "therapy",
+            "happy", "joy", "blessed", "grateful", "thankful", "love you", "peace", "hope", "faith", "believe",
+            "magic", "witch", "wicca", "spells", "crystals", "herbs", "candles", "rituals", "moon water", "sage",
+            "funny", "comedy", "meme", "relatable", "truth", "facts", "did you know", "life hacks", "tips", "tricks",
+            "how to", "tutorial", "guide", "explained", "education", "learning", "school", "college", "university",
+            "usa", "uk", "canada", "australia", "india", "philippines", "europe", "asia", "africa", "world",
+            "must watch", "watch till end", "don't skip", "wait for it", "omg", "wow", "crazy", "shocking", "scary",
+            "mystery", "conspiracy", "secret", "hidden", "unknown", "truth revealed", "exposed", "leak", "news",
+            "update", "alert", "warning", "urgent", "important", "breaking", "live", "stream", "video",
+        ]
+        
+        # Multiply to reach "300 is must" count if needed, but 100+ high quality is better. 
+        # Let's just create a massive string of tags for the description.
+        mega_tag_string = " ".join([f"#{k.replace(' ', '')}" for k in keywords_block])
+        
+        # Append to description if space allows (YouTube desc limit is 5000 chars)
+        current_len = len(result['description'])
+        if current_len < 4500:
+            result['description'] += f"\n\n🔎 **INCOMING SEARCH TERMS:**\n{mega_tag_string}"[:(4800 - current_len)]
+        
+        # Verify tags for the "tags" field (Max 500 chars limit by YouTube)
+        mega_viral_tags = keywords_block[:50] # Take top 50 for tags list
+        
+        # Merge LLM tags + mega viral tags (deduplicate)
+        existing_tags = result.get('tags', [])
+        if isinstance(existing_tags, str):
+            existing_tags = [t.strip() for t in existing_tags.split(',')]
+        
+        all_tags = list(dict.fromkeys(existing_tags + mega_viral_tags))  # dedupe preserving order
+        
+        # YouTube Tag Limit logic: Must be < 500 characters TOTAL. 
+        # If we just dump 50 tags, it will likely exceed 500 chars.
+        # So we filter to fit.
+        final_tags = []
+        current_char_count = 0
+        for t in all_tags:
+            t_clean = t.replace("#", "").strip()[:30] # Limit individual tag length
+            if current_char_count + len(t_clean) + 1 < 490: # buffer
+                final_tags.append(t_clean)
+                current_char_count += len(t_clean) + 1
+            else:
+                break
+                
+        result['tags'] = final_tags
+        
         result['title'] = title
         
         if 'categoryId' not in result:

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   schedule:
     # 4:00 AM EST = 9:00 AM UTC (Videos will publish at 6 AM EST)
-    - cron: "0 11 * * *"
+    - cron: "0 9 * * *"
 
 jobs:
   produce-video:
@@ -33,8 +33,8 @@ jobs:
 
       - name: Rate Limit Cooldown (4 Mins)
         run: |
-          echo "⏳ Waiting 4 minutes for rate limits..."
-          sleep 240
+          echo "⏳ Waiting 1 minute for rate limits..."
+          sleep 60
 
       - name: Run Production Studio
         env:

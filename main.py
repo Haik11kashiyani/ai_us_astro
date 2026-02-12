@@ -79,16 +79,24 @@ def process_immediate_upload(uploader, video_path, script_data, sign, date_str, 
     try:
         meta = script_data.get("metadata", {})
         if not meta or "title" not in meta:
-            print("⚠️ Metadata missing/invalid in script. Generating fallback...")
+            print("⚠️ Metadata missing/invalid in script. Using MEGA viral fallback...")
             meta = uploader.generate_metadata(sign, date_str, period_type)
         else:
             print("✅ Using AI-generated metadata.")
+            # Force-inject viral tags even for AI-generated metadata
+            if "tags" not in meta or not meta["tags"]:
+                fallback = uploader.generate_metadata(sign, date_str, period_type)
+                meta["tags"] = fallback["tags"]
             
     except Exception as e:
-        print(f"⚠️ Metadata extraction failed: {e}. Using fallback.")
+        print(f"⚠️ Metadata extraction failed: {e}. Using MEGA viral fallback.")
         meta = uploader.generate_metadata(sign, date_str, period_type)
     
     if "categoryId" not in meta: meta["categoryId"] = "24"
+    
+    # Ensure tags is a list (LLM sometimes returns comma-separated string)
+    if isinstance(meta.get("tags"), str):
+        meta["tags"] = [t.strip() for t in meta["tags"].split(",")]
     
     uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
 
@@ -384,6 +392,7 @@ def main():
             print(f"❌ Daily Video Failed: {e}")
             import traceback
             traceback.print_exc()
+            sys.exit(1)  # Exit with error so GitHub Actions marks this as FAILED
 
     # ==========================
     # MODE 2: DETAILED (EVENING)
