@@ -243,6 +243,13 @@ Mercury Retrograde updates, Full Moon rituals, and New Moon intentions.
         self.logger.info(f"🚀 Uploading {file_path}...")
         self.logger.info(f"   Title: {metadata['title']}")
         
+        # FINAL SAFETY CHECK: Sanitize description length and content
+        if len(metadata['description']) > 4800:
+             self.logger.warning(f"⚠️ Description too long ({len(metadata['description'])}). Truncating to 4800.")
+             metadata['description'] = metadata['description'][:4800]
+        
+        metadata['description'] = metadata['description'].replace('<', '').replace('>', '')
+        
         status_body = {
             "privacyStatus": privacy_status,
             "selfDeclaredMadeForKids": False

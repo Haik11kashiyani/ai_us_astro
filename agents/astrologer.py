@@ -757,9 +757,17 @@ Discover what the stars have in store for you today!
         mega_tag_string = " ".join([f"#{k.replace(' ', '')}" for k in keywords_block])
         
         # Append to description if space allows (YouTube desc limit is 5000 chars)
+        # Safely truncate to avoid "invalidDescription" errors from high byte count (emojis)
+        MAX_DESC_LEN = 4500
         current_len = len(result['description'])
-        if current_len < 4500:
-            result['description'] += f"\n\n🔎 **INCOMING SEARCH TERMS:**\n{mega_tag_string}"[:(4800 - current_len)]
+        if current_len < MAX_DESC_LEN:
+            available_space = MAX_DESC_LEN - current_len
+            if available_space > 100:
+                result['description'] += f"\n\n🔎 **INCOMING SEARCH TERMS:**\n{mega_tag_string}"[:available_space]
+        
+        # FINAL SAFETY: Remove < and > characters which YouTube API often rejects
+        result['description'] = result['description'].replace('<', '').replace('>', '')
+
         
         # Verify tags for the "tags" field (Max 500 chars limit by YouTube)
         mega_viral_tags = keywords_block[:50] # Take top 50 for tags list
