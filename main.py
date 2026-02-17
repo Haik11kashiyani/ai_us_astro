@@ -100,6 +100,16 @@ def process_immediate_upload(agents, video_path, script_data, sign, date_str, pe
     if isinstance(meta.get("tags"), str):
         meta["tags"] = [t.strip() for t in meta["tags"].split(",")]
     
+    # Pre-sanitize tags: strip # prefixes, <, >, filter empties
+    if isinstance(meta.get("tags"), list):
+        clean_tags = []
+        for t in meta["tags"]:
+            if isinstance(t, str):
+                t = t.replace("#", "").replace("<", "").replace(">", "").strip()
+                if t and len(t) >= 2:
+                    clean_tags.append(t[:30])
+        meta["tags"] = clean_tags if clean_tags else ["horoscope", "astrology", "zodiac", "shorts"]
+    
     uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
 
 

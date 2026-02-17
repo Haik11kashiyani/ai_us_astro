@@ -72,6 +72,41 @@ class YouTubeUploader:
         except Exception as e:
             self.logger.error(f"❌ YouTube Auth Failed: {e}")
 
+    def _sanitize_tags(self, tags):
+        """Sanitize tags to comply with YouTube API requirements."""
+        if not isinstance(tags, list):
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",")]
+            else:
+                return ["horoscope", "astrology", "zodiac", "shorts"]
+        
+        sanitized = []
+        total_chars = 0
+        seen = set()
+        for tag in tags:
+            if not isinstance(tag, str):
+                continue
+            # Remove #, <, >, &, strip whitespace and quotes
+            t = tag.replace("#", "").replace("<", "").replace(">", "").replace("&", "and").strip()
+            t = t.strip('"').strip("'")
+            # Skip empty / too-short
+            if not t or len(t) < 2:
+                continue
+            # Truncate individual tags to 30 chars
+            t = t[:30].strip()
+            # Deduplicate (case-insensitive)
+            t_lower = t.lower()
+            if t_lower in seen:
+                continue
+            seen.add(t_lower)
+            # YouTube total tag limit ~500 chars
+            if total_chars + len(t) + 1 > 490:
+                break
+            sanitized.append(t)
+            total_chars += len(t) + 1
+        
+        return sanitized if sanitized else ["horoscope", "astrology", "zodiac", "shorts"]
+
     def generate_metadata(self, sign_name: str, date_str: str, period_type: str = "Daily") -> dict:
         """
         Generates VIRAL-OPTIMIZED Title, Description, and Tags.
@@ -261,6 +296,10 @@ Mercury Retrograde updates, Full Moon rituals, and New Moon intentions.
             status_body["publishAt"] = publish_at.isoformat() + "Z" 
             self.logger.info(f"   📅 Scheduled for: {status_body['publishAt']}")
 
+        # FINAL SAFETY: Sanitize tags before sending to YouTube API
+        metadata['tags'] = self._sanitize_tags(metadata.get('tags', []))
+        self.logger.info(f"   Tags ({len(metadata['tags'])}): {metadata['tags'][:5]}...")
+        
         body = {
             "snippet": {
                 "title": metadata['title'],

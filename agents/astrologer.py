@@ -784,15 +784,27 @@ Discover what the stars have in store for you today!
         # So we filter to fit.
         final_tags = []
         current_char_count = 0
+        seen_tags = set()
         for t in all_tags:
-            t_clean = t.replace("#", "").strip()[:30] # Limit individual tag length
+            if not isinstance(t, str):
+                continue
+            # Strip all characters YouTube API rejects
+            t_clean = t.replace("#", "").replace("<", "").replace(">", "").replace("&", "and").strip()
+            t_clean = t_clean.strip('"').strip("'")[:30].strip()
+            # Skip empty, too-short, or duplicate tags
+            if not t_clean or len(t_clean) < 2:
+                continue
+            t_lower = t_clean.lower()
+            if t_lower in seen_tags:
+                continue
+            seen_tags.add(t_lower)
             if current_char_count + len(t_clean) + 1 < 490: # buffer
                 final_tags.append(t_clean)
                 current_char_count += len(t_clean) + 1
             else:
                 break
                 
-        result['tags'] = final_tags
+        result['tags'] = final_tags if final_tags else ["horoscope", "astrology", "zodiac", "shorts"]
         
         result['title'] = title
         
