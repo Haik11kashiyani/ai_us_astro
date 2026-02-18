@@ -107,6 +107,8 @@ class AstrologerAgent:
             logging.info("🌟 Google AI Studio (Gemini) PRIMARY provider enabled")
         else:
             self.google_model = None
+            
+        self.google_quota_exhausted = False  # CIRCUIT BREAKER: Avoid waiting 60s if quota is 0
         
         if not self.api_keys and not self.google_model:
             raise ValueError("No API keys found! Need OPENROUTER_API_KEY or GOOGLE_AI_API_KEY")
@@ -143,9 +145,14 @@ class AstrologerAgent:
         if not self.google_model:
             return None
             
-        # Light rate limit guard (10s) — enough for normal usage, fast-fail on quota issues
-        logging.info("⏳ Rate limit guard: Sleeping 10s before Google AI call...")
-        time.sleep(10)
+        # CIRCUIT BREAKER: If quota is already exhausted (limit: 0), skip immediately
+        if self.google_quota_exhausted:
+            logging.warning("⏩ Google AI Quota Exhausted (Circuit Breaker). Skipping wait & call.")
+            return None
+
+        # STRICT RATE LIMIT: 60 seconds sleep to ensure max 1 RPM per instance as requested
+        logging.info("⏳ STRICT RATE LIMIT: Sleeping 60s before Google AI call to prevent 429s...")
+        time.sleep(60)
             
         for attempt in range(1, max_retries + 1):
             logging.info(f"🌟 Google AI Studio (Gemini) - Attempt {attempt}/{max_retries}...")
@@ -176,7 +183,8 @@ class AstrologerAgent:
                 
                 # FAST-FAIL: If quota is at limit 0, no point retrying — it won't recover
                 if "limit: 0" in error_str:
-                    logging.error("❌ Gemini quota EXHAUSTED (limit: 0). Skipping all retries → fallback.")
+                    logging.error("❌ Gemini quota EXHAUSTED (limit: 0). Enabling Circuit Breaker & Skipping retries.")
+                    self.google_quota_exhausted = True
                     return None
                 
                 # If rate limited (temporary), do a short retry
