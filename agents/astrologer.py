@@ -137,23 +137,21 @@ class AstrologerAgent:
             return True
         return False
 
-    def _generate_with_google_ai(self, system_prompt: str, user_prompt: str, max_retries: int = 3) -> dict:
-        """Primary provider: Google AI Studio (Gemini). Free with 15 RPM limit. ENFORCES 1 CALL PER MINUTE STRICTLY."""
+    def _generate_with_google_ai(self, system_prompt: str, user_prompt: str, max_retries: int = 2) -> dict:
+        """Primary provider: Google AI Studio (Gemini). Free with 15 RPM limit. Fast-fails on quota exhaustion."""
         import time
         if not self.google_model:
             return None
             
-        # STRICT RATE LIMIT: 60 seconds sleep to ensure max 1 RPM per instance
-        # This allows multiple workflows to run (up to 15) without hitting the global 15 RPM limit
-        logging.info("⏳ STRICT RATE LIMIT: Sleeping 60s before Google AI call to prevent 429s...")
-        time.sleep(60)
+        # Light rate limit guard (10s) — enough for normal usage, fast-fail on quota issues
+        logging.info("⏳ Rate limit guard: Sleeping 10s before Google AI call...")
+        time.sleep(10)
             
         for attempt in range(1, max_retries + 1):
             logging.info(f"🌟 Google AI Studio (Gemini) - Attempt {attempt}/{max_retries}...")
             try:
-                # Rate limit: 15 RPM = 1 request per 4 seconds (use 5s to be safe)
                 if attempt > 1:
-                    wait_time = 10 * attempt  # 20s, 30s backoff
+                    wait_time = 15 * attempt  # 30s backoff
                     logging.info(f"⏳ Rate limit guard: waiting {wait_time}s before retry...")
                     time.sleep(wait_time)
                 
@@ -176,10 +174,15 @@ class AstrologerAgent:
                 error_str = str(e)
                 logging.warning(f"⚠️ Google AI attempt {attempt} failed: {e}")
                 
-                # If rate limited, wait longer and retry
+                # FAST-FAIL: If quota is at limit 0, no point retrying — it won't recover
+                if "limit: 0" in error_str:
+                    logging.error("❌ Gemini quota EXHAUSTED (limit: 0). Skipping all retries → fallback.")
+                    return None
+                
+                # If rate limited (temporary), do a short retry
                 if "429" in error_str or "Resource" in error_str or "quota" in error_str.lower():
                     if attempt < max_retries:
-                        wait_time = 60 * attempt  # 60s, 120s
+                        wait_time = 15 * attempt  # 15s, 30s
                         logging.info(f"⏳ Google AI rate limited. Waiting {wait_time}s...")
                         time.sleep(wait_time)
                         continue
@@ -265,9 +268,9 @@ class AstrologerAgent:
             
             while True:
                 for model in self.models:
-                    # Short wait between attempts (30s instead of 2 min)
-                    logging.info(f"⏳ Rate Limit Guard: Waiting 30s before OpenRouter call...")
-                    time.sleep(30)
+                    # Short wait between model attempts
+                    logging.info(f"⏳ Rate Limit Guard: Waiting 10s before OpenRouter call...")
+                    time.sleep(10)
                     
                     logging.info(f"🤖 Generating {period_type} horoscope using: {model}")
                     try:

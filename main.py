@@ -110,7 +110,12 @@ def process_immediate_upload(agents, video_path, script_data, sign, date_str, pe
                     clean_tags.append(t[:30])
         meta["tags"] = clean_tags if clean_tags else ["horoscope", "astrology", "zodiac", "shorts"]
     
-    uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
+    upload_success = uploader.upload_video(video_path, meta, privacy_status=privacy_status, publish_at=publish_at)
+    
+    if not upload_success:
+        raise Exception(f"❌ YouTube upload FAILED for {sign} ({period_type}). Check logs above for details.")
+    
+    print(f"✅ Upload completed successfully for {sign} ({period_type})!")
 
 
 def produce_video_from_script(agents, sign, title_suffix, script, date_str, theme_override=None, period_type="Daily", header_text=""):
