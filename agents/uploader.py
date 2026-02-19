@@ -82,29 +82,46 @@ class YouTubeUploader:
         
         sanitized = []
         total_chars = 0
+        MAX_TAGS_COUNT = 30  # Safety limit for number of tags
+        MAX_TOTAL_CHARS = 400 # Safety buffer (limit is 500)
+        
         seen = set()
+        
         for tag in tags:
             if not isinstance(tag, str):
                 continue
-            # Remove #, <, >, &, strip whitespace and quotes
-            t = tag.replace("#", "").replace("<", "").replace(">", "").replace("&", "and").strip()
-            t = t.strip('"').strip("'")
+                
+            # Remove bad chars
+            t = tag.replace("#", "").replace("<", "").replace(">", "").replace("&", "and")
+            # Keep only alphanumeric and spaces/hyphens for safety
+            t = "".join(ch for ch in t if ch.isalnum() or ch in " -")
+            t = t.strip()
+            
             # Skip empty / too-short
             if not t or len(t) < 2:
                 continue
+                
             # Truncate individual tags to 30 chars
             t = t[:30].strip()
+            
             # Deduplicate (case-insensitive)
             t_lower = t.lower()
             if t_lower in seen:
                 continue
             seen.add(t_lower)
-            # YouTube total tag limit ~500 chars
-            if total_chars + len(t) + 1 > 490:
+            
+            # Check limits
+            # YouTube counts length of tags + separators. We use a safe buffer.
+            if total_chars + len(t) + 1 > MAX_TOTAL_CHARS:
                 break
+            
+            if len(sanitized) >= MAX_TAGS_COUNT:
+                break
+                
             sanitized.append(t)
             total_chars += len(t) + 1
         
+        # Ensure we have at least defaults if everything was filtered
         return sanitized if sanitized else ["horoscope", "astrology", "zodiac", "shorts"]
 
     def generate_metadata(self, sign_name: str, date_str: str, period_type: str = "Daily") -> dict:
